@@ -166,8 +166,9 @@ body.app-ready .main-content {
   width: 100%;
   padding: 50px;
   overflow-y: auto;
-  align-items: flex-start;
-  justify-content: center;
+  align-items: center; /* Center horizontally */
+  justify-content: flex-start; /* Start at top */
+  flex-direction: column;
 }
 .view.active {
   display: flex;
@@ -292,6 +293,52 @@ input[type="range"]::-webkit-slider-thumb {
   background: var(--primary);
   border: 3px solid #000;
   cursor: pointer;
+}
+
+/* --- TABS --- */
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 25px;
+  border-bottom: var(--border-sub);
+  padding-bottom: 15px;
+  width: 100%;
+}
+.tab {
+  padding: 12px 25px;
+  background: var(--sidebar-bg);
+  color: var(--text-muted);
+  border: var(--border-sub);
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+.tab:hover {
+  background: #1a1a1a;
+  color: #fff;
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-sm);
+}
+.tab.active {
+  background: var(--primary);
+  color: #000;
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  transform: translate(-2px, -2px);
+}
+
+.tab-content {
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+.tab-content.active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 /* EDITOR */

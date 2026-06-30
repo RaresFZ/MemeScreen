@@ -251,18 +251,29 @@ ipcMain.on('discord-login', async (event, { token, channelId }) => {
   });
 
   discordClient.on(Events.MessageCreate, message => {
-    if (message.channelId === channelId && message.attachments.size > 0) {
-      const attachment = message.attachments.first();
-      if (!attachment) return;
-      
-      const type = attachment.contentType?.startsWith('video/') ? 'video' : 'image';
-      
-      // On envoie le signal UNIQUEMENT à l'overlay
-      if (overlayWindow) {
-        overlayWindow.webContents.send('new-media', {
-          url: attachment.url,
-          type: type
-        });
+    if (message.channelId === channelId) {
+      if (message.attachments.size > 0) {
+        const attachments = Array.from(message.attachments.values());
+        
+        let mediaAttach = attachments.find(a => a.contentType?.startsWith('image/') || a.contentType?.startsWith('video/'));
+        let audioAttach = attachments.find(a => a.contentType?.startsWith('audio/'));
+        
+        if (!mediaAttach) return;
+        
+        const type = mediaAttach.contentType?.startsWith('video/') ? 'video' : 'image';
+        
+        // On envoie le signal UNIQUEMENT à l'overlay
+        if (overlayWindow) {
+          overlayWindow.webContents.send('new-media', {
+            url: mediaAttach.url,
+            type: type,
+            soundUrl: audioAttach ? audioAttach.url : null
+          });
+        }
+      } else if (message.content) {
+        if (overlayWindow) {
+          overlayWindow.webContents.send('new-text', { text: message.content });
+        }
       }
     }
   });
@@ -275,7 +286,7 @@ ipcMain.on('discord-login', async (event, { token, channelId }) => {
   }
 });
 
-ipcMain.on('discord-upload', async (event, { filePath, fileName }) => {
+ipcMain.on('discord-upload', async (event, { filePath, fileName, sound }) => {
   try {
     if (!discordClient || !discordClient.targetChannelId) {
       throw new Error("Bot non connecté.");
@@ -283,13 +294,37 @@ ipcMain.on('discord-upload', async (event, { filePath, fileName }) => {
     const channel = await discordClient.channels.fetch(discordClient.targetChannelId);
     if (!channel) throw new Error("Salon introuvable. Vérifiez l'ID.");
 
-    const attachment = new AttachmentBuilder(filePath, { name: fileName });
-    await channel.send({ files: [attachment] });
+    let filesToSend = [new AttachmentBuilder(filePath, { name: fileName })];
+    
+    if (sound && sound !== 'none') {
+      const soundPath = path.isAbsolute(sound) ? sound : path.join(__dirname, 'assets', 'sounds', sound);
+      if (fs.existsSync(soundPath)) {
+        filesToSend.push(new AttachmentBuilder(soundPath, { name: path.basename(soundPath) }));
+      }
+    }
+
+    await channel.send({ files: filesToSend });
     
     event.reply('upload-status', { success: true });
   } catch (error) {
     console.error(error);
     event.reply('upload-status', { success: false, error: error.message });
+  }
+});
+
+ipcMain.on('discord-tts', async (event, { text }) => {
+  try {
+    if (!discordClient || !discordClient.targetChannelId) {
+      throw new Error("Bot non connecté.");
+    }
+    const channel = await discordClient.channels.fetch(discordClient.targetChannelId);
+    if (!channel) throw new Error("Salon introuvable. Vérifiez l'ID.");
+
+    await channel.send(text);
+    event.reply('tts-status', { success: true });
+  } catch (error) {
+    console.error(error);
+    event.reply('tts-status', { success: false, error: error.message });
   }
 });
 
@@ -306,7 +341,32 @@ ipcMain.on('update-settings', (event, settings) => {
   }
 });
 
-ipcMain.on('process-video', async (event, { inputPath, texts, width, height }) => {
+let currentMacros = [];
+ipcMain.on('update-macros', (event, macros) => {
+  currentMacros.forEach(m => {
+    if (m.shortcut) {
+      try { globalShortcut.unregister(m.shortcut); } catch(e){}
+    }
+  });
+  
+  currentMacros = macros;
+  
+  currentMacros.forEach(m => {
+    if (m.shortcut) {
+      try {
+        globalShortcut.register(m.shortcut, () => {
+          if (mainWindow) {
+            mainWindow.webContents.send('trigger-macro-shortcut', m.id);
+          }
+        });
+      } catch(e) {
+        console.error(`Failed to register shortcut ${m.shortcut} for macro ${m.name}`);
+      }
+    }
+  });
+});
+
+ipcMain.on('process-video', async (event, { inputPath, texts, width, height, sound }) => {
   if (!discordClient || !discordClient.targetChannelId) {
     event.reply('upload-status', { success: false, error: "Bot non connecté." });
     return;
@@ -356,8 +416,16 @@ ipcMain.on('process-video', async (event, { inputPath, texts, width, height }) =
         fileSizeInMegabytes = (stats.size / (1024 * 1024)).toFixed(2);
         
         const channel = await discordClient.channels.fetch(discordClient.targetChannelId);
-        const attachment = new AttachmentBuilder(tempPath, { name: 'meme.mp4' });
-        await channel.send({ files: [attachment] });
+        
+        let filesToSend = [new AttachmentBuilder(tempPath, { name: 'meme.mp4' })];
+        if (sound && sound !== 'none') {
+          const soundPath = path.isAbsolute(sound) ? sound : path.join(__dirname, 'assets', 'sounds', sound);
+          if (fs.existsSync(soundPath)) {
+            filesToSend.push(new AttachmentBuilder(soundPath, { name: path.basename(soundPath) }));
+          }
+        }
+        
+        await channel.send({ files: filesToSend });
         event.reply('upload-status', { success: true });
       } catch (err) {
         let msg = err.message;

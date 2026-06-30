@@ -67,34 +67,108 @@
 
       <!-- EDITOR SCREEN -->
       <section id="editorScreen" class="view">
-        <div class="editor-layout">
-          <div class="canvas-area">
-            <div id="mediaWrapper" class="media-wrapper">
-               <video id="memeVideo" style="display: none;" loop muted></video>
-               <canvas id="memeCanvas"></canvas>
+        <div class="tabs">
+          <div class="tab active" data-tab="local">Fichier Local</div>
+          <div class="tab" data-tab="gif">Recherche GIF</div>
+          <div class="tab" data-tab="tts">Alerte Vocale (TTS)</div>
+          <div class="tab" data-tab="favorites">Favoris ⭐</div>
+        </div>
+
+        <!-- Tab: Local File -->
+        <div class="tab-content active" id="tab-local">
+          <div class="editor-layout">
+            <div class="canvas-area">
+              <div id="mediaPlaceholder" class="card text-center" style="margin: 0 auto; max-width: 600px;">
+                 <h1>Éditeur de Média</h1>
+                 <p>Sélectionne une image ou une vidéo de ton PC pour y ajouter du texte et du son.</p>
+                 <button id="selectMediaBtn" class="primary-btn btn-lg">📂 Choisir un média (PC)</button>
+                 <p class="text-muted mt-3">⚠️ Limites : Vidéos (8 Mo max), Images (15 Mo max)</p>
+              </div>
+              <div id="mediaWrapper" class="media-wrapper" style="display:none; position: relative;">
+                 <video id="memeVideo" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;" loop muted></video>
+                 <img id="memeImagePreview" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;" />
+                 <canvas id="memeCanvas" style="position: relative; z-index: 10;"></canvas>
+              </div>
+              
+              <div class="toolbar mt-3" id="toolbarGroup" style="display:none;">
+                <button id="addTextBtn" class="btn-secondary">+ Ajouter Texte</button>
+                <button id="deleteTextBtn" class="btn-danger" disabled>🗑️ Supprimer</button>
+              </div>
             </div>
             
-            <div class="toolbar mt-3">
-              <button id="addTextBtn" class="btn-secondary">+ Ajouter Texte</button>
-              <button id="deleteTextBtn" class="btn-danger" disabled>🗑️ Supprimer</button>
+            <div class="properties-area" id="propertiesArea" style="display: none;">
+              <div class="card" id="textProperties" style="display: none;">
+                <h3>Propriétés du texte</h3>
+                <div class="input-group">
+                  <textarea id="selectedTextInput" placeholder="Texte..." class="prop-textarea"></textarea>
+                </div>
+                <div class="input-group">
+                  <label>Taille (<span id="sizeValue">50</span>px)</label>
+                  <input type="range" id="sizeSlider" min="20" max="250" value="50" />
+                </div>
+              </div>
+              
+              <div class="card mt-3" id="sendControls" style="display: none;">
+                <div class="input-group">
+                  <label>Son MyInstants 🎵</label>
+                  <div style="display:flex; gap:10px; margin-bottom: 10px;">
+                    <input type="text" id="soundSearchInput" placeholder="Rechercher un son (ex: Bruh)..." style="flex:1; padding:8px; border-radius:5px; border:1px solid #334155; background:#0f172a; color:white;">
+                    <button id="soundSearchBtn" class="primary-btn" style="padding: 8px 15px; width:auto; font-size:1rem;">Chercher</button>
+                  </div>
+                  <div id="soundResults" style="display:none; max-height: 150px; overflow-y: auto; background: #0f172a; border: 1px solid #334155; border-radius: 5px; padding: 5px; margin-bottom: 10px;"></div>
+                  
+                  <div style="padding: 10px; background: #1e293b; border-radius: 5px; border: 1px dashed #6366f1; margin-top: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                    <div>
+                      <span style="font-size: 0.9em; color: #cbd5e1;">Son sélectionné: </span>
+                      <strong id="selectedSoundName" style="color: #10b981; word-break: break-word;">Aucun</strong>
+                    </div>
+                    <button id="clearSoundBtn" class="btn-small btn-danger" style="padding: 2px 8px; flex-shrink: 0; display: none;">X</button>
+                  </div>
+                  <input type="hidden" id="soundSelect" value="none">
+                </div>
+                <div class="editor-actions mt-4">
+                  <button id="cancelMemeBtn" class="btn-secondary w-100" style="margin-bottom: 15px;">Annuler</button>
+                  <button id="favoriteMemeBtn" class="btn-secondary w-100" style="background:#475569; border-color:#64748b; color: white; margin-bottom: 15px;">⭐ Ajouter aux favoris</button>
+                  <button id="sendMemeBtn" class="primary-btn btn-lg w-100" style="margin-top: 5px;">Envoyer 🚀</button>
+                </div>
+                <div id="uploadStatus" class="status-message mt-2" style="text-align: center;"></div>
+              </div>
             </div>
           </div>
-          
-          <div class="properties-area">
-            <div class="card" id="textProperties" style="display: none;">
-              <h3>Propriétés du texte</h3>
-              <div class="input-group">
-                <textarea id="selectedTextInput" placeholder="Texte..." class="prop-textarea"></textarea>
-              </div>
-              <div class="input-group">
-                <label>Taille (<span id="sizeValue">50</span>px)</label>
-                <input type="range" id="sizeSlider" min="20" max="250" value="50" />
-              </div>
+        </div>
+
+        <!-- Tab: GIF Search -->
+        <div class="tab-content" id="tab-gif" style="padding: 20px;">
+          <div class="card" style="margin-top: 0; max-width: 100%;">
+            <div style="display:flex; gap:10px; margin-bottom: 20px;">
+              <input type="text" id="gifSearchInput" placeholder="Rechercher un GIF..." style="flex:1; padding:10px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:white;">
+              <button id="gifSearchBtn" class="primary-btn" style="width:auto;">Chercher</button>
             </div>
-            
-            <div class="editor-actions mt-3">
-              <button id="cancelMemeBtn" class="btn-secondary w-100 mb-2">Annuler</button>
-              <button id="sendMemeBtn" class="primary-btn w-100">Envoyer 🚀</button>
+            <div id="gifGrid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 400px; overflow-y: auto; background: #0f172a; padding: 10px; border-radius: 8px;">
+              <!-- GIFs will be injected here -->
+              <p class="text-muted" style="grid-column: span 3; text-align: center; margin-top: 20px;">Tape une recherche pour trouver un GIF animé !</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: TTS -->
+        <div class="tab-content" id="tab-tts" style="padding: 20px;">
+          <div class="card" style="margin-top: 0; max-width: 100%;">
+            <h3>Faire parler l'overlay 🔊</h3>
+            <p class="text-muted">Le texte s'affichera à l'écran et sera lu par une voix robotique.</p>
+            <textarea id="ttsInput" placeholder="Tape le message à lire à haute voix..." style="width:100%; height:150px; padding:15px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:white; font-size:18px; resize:none; margin-bottom: 15px; box-sizing:border-box;"></textarea>
+            <button id="sendTtsBtn" class="primary-btn btn-lg w-100">Envoyer le message TTS 🚀</button>
+            <div id="ttsStatus" class="status-message mt-2" style="text-align: center;"></div>
+          </div>
+        </div>
+
+        <!-- Tab: Favorites -->
+        <div class="tab-content" id="tab-favorites" style="padding: 20px;">
+          <div class="card" style="margin-top: 0; max-width: 100%;">
+            <h3>Tes Mèmes Favoris ⭐</h3>
+            <p class="text-muted">Sauvegarde tes mèmes (médias, textes, sons) pour les envoyer en un clic ! Tu peux définir un raccourci clavier global (ex: Ctrl+Alt+1) pour envoyer ton mème même quand l'appli est réduite.</p>
+            <div id="favoritesList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; max-height: 400px; overflow-y: auto; background: #0f172a; padding: 15px; border-radius: 8px;">
+              <!-- Favorites will be injected here -->
             </div>
           </div>
         </div>
@@ -107,15 +181,15 @@
           <div class="settings-grid">
             <div class="input-group">
               <label>Durée de l'image (<span id="durationValue">7</span>s)</label>
-              <input type="range" id="durationSlider" min="3" max="30" value="7" />
+              <input type="range" id="durationSliderSettings" min="3" max="30" value="7" />
             </div>
             <div class="input-group">
               <label>Taille du Widget (<span id="scaleValue">100</span>%)</label>
-              <input type="range" id="scaleSlider" min="20" max="500" step="10" value="100" />
+              <input type="range" id="scaleSliderSettings" min="20" max="500" step="10" value="100" />
             </div>
             <div class="input-group">
               <label>Position</label>
-              <select id="positionSelect">
+              <select id="positionSelectSettings">
                 <option value="bottom-right">En bas à droite</option>
                 <option value="top-right">En haut à droite</option>
                 <option value="bottom-left">En bas à gauche</option>
@@ -124,8 +198,8 @@
               </select>
             </div>
             <div class="input-group">
-              <label>Volume Vidéo (<span id="volumeValue">50</span>%)</label>
-              <input type="range" id="volumeSlider" min="0" max="100" value="50" />
+              <label>Volume Vidéo & Audio (<span id="volumeValue">50</span>%)</label>
+              <input type="range" id="volumeSliderSettings" min="0" max="100" value="50" />
             </div>
           </div>
           <button id="saveSettingsBtn" class="primary-btn mt-4">Sauvegarder</button>
@@ -136,6 +210,26 @@
   </div>
 
   <div id="appVersion" style="position: absolute; bottom: 10px; right: 15px; font-size: 12px; color: #94a3b8; font-weight: 600; letter-spacing: 0.5px; z-index: 1000;"></div>
+
+    <!-- Modal Favori -->
+    <div id="favoriteModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+      <div class="card" style="margin-top: 0; width: 450px; max-width: 90%;">
+        <h3>⭐ Ajouter aux Favoris</h3>
+        <div class="input-group mt-4">
+          <label>Nom du favori :</label>
+          <input type="text" id="favNameInput" placeholder="Ex: Mon Super Meme">
+        </div>
+        <div class="input-group">
+          <label>Raccourci Clavier Global (Optionnel) :</label>
+          <input type="text" id="favShortcutInput" placeholder="Ex: CommandOrControl+Alt+1">
+          <p class="text-muted" style="font-size: 0.8em; margin-top: 5px;">Tu pourras déclencher ce mème même si l'application est réduite en arrière-plan.</p>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:25px;">
+          <button id="cancelFavBtn" class="btn-secondary" style="flex:1;">Annuler</button>
+          <button id="saveFavBtn" class="primary-btn" style="flex:1;">Sauvegarder</button>
+        </div>
+      </div>
+    </div>
 
   <script src="renderer.js"></script>
 </body>

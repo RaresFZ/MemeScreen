@@ -1,6 +1,6 @@
 {
   "name": "memescreen-desktop",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "MemeScreen Desktop App",
   "main": "main.js",
   "scripts": {
@@ -22,6 +22,9 @@
         "owner": "RaresFZ",
         "repo": "MemeScreen"
       }
+    ],
+    "asarUnpack": [
+      "node_modules/ffmpeg-static/**/*"
     ],
     "win": {
       "target": "nsis",

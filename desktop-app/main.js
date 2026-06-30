@@ -7,7 +7,11 @@ const { Client, GatewayIntentBits, AttachmentBuilder, Events } = require('discor
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegStatic = require('ffmpeg-static');
 
-ffmpeg.setFfmpegPath(ffmpegStatic);
+let ffmpegPath = ffmpegStatic;
+if (ffmpegPath.includes('app.asar')) {
+  ffmpegPath = ffmpegPath.replace('app.asar', 'app.asar.unpacked');
+}
+ffmpeg.setFfmpegPath(ffmpegPath);
 
 let mainWindow;
 let overlayWindow;
@@ -116,7 +120,7 @@ if (!gotTheLock) {
     autoUpdater.checkForUpdatesAndNotify();
     
     // Enregistrement du raccourci global pour couper l'overlay
-    globalShortcut.register('CommandOrControl+²', () => {
+    globalShortcut.register('CommandOrControl+Shift+X', () => {
       if (overlayWindow) {
         overlayWindow.webContents.send('force-close-media');
       }

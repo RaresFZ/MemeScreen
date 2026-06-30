@@ -140,6 +140,21 @@ const savedChannel = localStorage.getItem('memescreen_channel');
 if (savedToken) inputs.token.value = savedToken;
 if (savedChannel) inputs.channelId.value = savedChannel;
 
+if (savedToken && savedChannel) {
+  setTimeout(() => {
+    buttons.connect.click();
+  }, 500);
+}
+
+const autoStartCheckbox = document.getElementById('autoStartCheckbox');
+if (autoStartCheckbox) {
+  autoStartCheckbox.checked = localStorage.getItem('memescreen_autostart') === 'true';
+  autoStartCheckbox.addEventListener('change', (e) => {
+    localStorage.setItem('memescreen_autostart', e.target.checked);
+    ipcRenderer.send('set-autostart', e.target.checked);
+  });
+}
+
 // --- DISCORD LOGIN ---
 buttons.connect.addEventListener('click', () => {
   const token = inputs.token.value.trim();

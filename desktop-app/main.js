@@ -341,6 +341,14 @@ ipcMain.on('update-settings', (event, settings) => {
   }
 });
 
+ipcMain.on('set-autostart', (event, enable) => {
+  app.setLoginItemSettings({
+    openAtLogin: enable,
+    path: app.getPath('exe'),
+    args: ['--hidden']
+  });
+});
+
 let currentMacros = [];
 ipcMain.on('update-macros', (event, macros) => {
   currentMacros.forEach(m => {

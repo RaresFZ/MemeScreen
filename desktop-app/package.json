@@ -1,6 +1,6 @@
 {
   "name": "memescreen-desktop",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "MemeScreen Desktop App",
   "main": "main.js",
   "scripts": {

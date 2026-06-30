@@ -188,6 +188,14 @@
         <div class="card">
           <h1>Paramètres ⚙️</h1>
           <div class="settings-grid">
+            <div class="input-group" style="grid-column: 1 / -1; margin-bottom: 10px;">
+              <h3 style="margin-top:0;">Système 💻</h3>
+              <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                <input type="checkbox" id="autoStartCheckbox" style="width:auto;">
+                Lancer MemeScreen au démarrage de Windows (en arrière-plan)
+              </label>
+            </div>
+            <div style="grid-column: 1 / -1;"><h3 style="margin: 10px 0;">Overlay 🖥️</h3></div>
             <div class="input-group">
               <label>Durée de l'image (<span id="durationValue">7</span>s)</label>
               <input type="range" id="durationSliderSettings" min="3" max="30" value="7" />

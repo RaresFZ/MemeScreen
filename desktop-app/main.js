@@ -50,6 +50,11 @@ function createWindow() {
       mainWindow.webContents.executeJavaScript('document.body.classList.add("app-ready")');
     }, 100);
   });
+  
+  // Fermer toute l'application quand la fenêtre principale est fermée
+  mainWindow.on('closed', () => {
+    app.quit();
+  });
 }
 
 function createOverlayWindow() {
@@ -75,6 +80,11 @@ function createOverlayWindow() {
   
   // On permet aux clics de passer au travers de cette fenêtre
   overlayWindow.setIgnoreMouseEvents(true, { forward: true });
+  
+  // Priorité maximale pour passer au-dessus des jeux
+  overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  overlayWindow.setAlwaysOnTop(true, 'screen-saver', 1);
+  
   overlayWindow.loadFile('overlay.html');
 }
 
@@ -222,7 +232,15 @@ ipcMain.on('process-video', async (event, { inputPath, texts, width, height }) =
     filterComplex = filters.join(',');
   }
 
-  const command = ffmpeg(inputPath);
+  const command = ffmpeg(inputPath)
+    .outputOptions([
+      '-c:v libx264',
+      '-preset ultrafast', // Traitement rapide
+      '-crf 28',           // Forte compression pour rester sous les 8/25Mo
+      '-c:a aac',
+      '-b:a 128k'
+    ]);
+    
   if (filterComplex) {
     command.videoFilters(filterComplex);
   }

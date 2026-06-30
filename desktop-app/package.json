@@ -1,6 +1,6 @@
 {
   "name": "memescreen-desktop",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MemeScreen Desktop App",
   "main": "main.js",
   "scripts": {
@@ -16,11 +16,13 @@
   "repository": "github:RaresFZ/MemeScreen",
   "build": {
     "appId": "com.memescreen.app",
-    "publish": [{
-      "provider": "github",
-      "owner": "RaresFZ",
-      "repo": "MemeScreen"
-    }],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "RaresFZ",
+        "repo": "MemeScreen"
+      }
+    ],
     "win": {
       "target": "nsis",
       "icon": "icon.ico"

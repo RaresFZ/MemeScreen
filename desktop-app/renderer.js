@@ -119,6 +119,9 @@ saveSettingsBtn.addEventListener('click', () => {
 });
 
 // --- INIT ---
+const packageJson = require('./package.json');
+document.getElementById('appVersion').textContent = `v${packageJson.version}`;
+
 const savedToken = localStorage.getItem('memescreen_token');
 const savedChannel = localStorage.getItem('memescreen_channel');
 if (savedToken) inputs.token.value = savedToken;

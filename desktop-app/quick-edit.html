@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>MemeScreen - Envoi Rapide</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      background-color: #0f172a; /* dark blue slate */
+      color: white;
+      font-family: 'Inter', -apple-system, sans-serif;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    
+    .editor-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #1e293b;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    
+    #memeCanvas, #memeVideo {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .row {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    
+    .row input[type="text"] {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: white;
+      font-size: 16px;
+    }
+    
+    .buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    
+    button {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    
+    .btn-send {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    }
+    
+    .btn-send:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+    }
+    
+    .btn-cancel {
+      background: #334155;
+      color: white;
+    }
+    
+    .btn-cancel:hover {
+      background: #475569;
+    }
+    
+    #uploadStatus {
+      text-align: center;
+      font-size: 14px;
+      margin-top: 5px;
+      height: 20px;
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="editor-container">
+    <video id="memeVideo" style="display:none;" loop muted></video>
+    <canvas id="memeCanvas" style="display:none;"></canvas>
+  </div>
+  
+  <div class="controls">
+    <div class="row">
+      <input type="text" id="memeText" placeholder="Texte du meme (vide pour ne rien écrire)" />
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <span style="font-size: 12px; color: #94a3b8; margin-bottom: 5px;">Taille</span>
+        <input type="range" id="sizeSlider" min="20" max="200" value="80" style="width: 100px;">
+      </div>
+    </div>
+    
+    <div class="buttons">
+      <button class="btn-cancel" id="cancelBtn">Annuler</button>
+      <button class="btn-send" id="sendBtn">Envoyer 🚀</button>
+    </div>
+  </div>
+  
+  <div id="uploadStatus"></div>
+
+  <script src="quick-edit.js"></script>
+</body>
+</html>

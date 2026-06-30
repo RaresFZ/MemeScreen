@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, screen, dialog, globalShortcut } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, dialog, globalShortcut, Tray, Menu, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -17,6 +17,9 @@ let mainWindow;
 let overlayWindow;
 let splashWindow;
 let discordClient;
+let tray = null;
+let isQuitting = false;
+let quickEditWindow = null;
 
 function createWindow() {
   splashWindow = new BrowserWindow({
@@ -42,6 +45,11 @@ function createWindow() {
   mainWindow.loadFile('index.html');
   
   mainWindow.once('ready-to-show', () => {
+    if (process.argv.includes('--hidden')) {
+      if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close();
+      return; // Démarrage invisible
+    }
+    
     // La main window est prête, on l'affiche et on cache le splash
     mainWindow.show();
     
@@ -55,9 +63,41 @@ function createWindow() {
     }, 100);
   });
   
-  // Fermer toute l'application quand la fenêtre principale est fermée
-  mainWindow.on('closed', () => {
-    app.quit();
+  // Intercepter la fermeture de la fenêtre pour la mettre en arrière-plan
+  mainWindow.on('close', (event) => {
+    if (!isQuitting) {
+      event.preventDefault();
+      mainWindow.hide();
+    }
+  });
+}
+
+function createQuickEditWindow(filePath, type) {
+  if (quickEditWindow && !quickEditWindow.isDestroyed()) {
+    quickEditWindow.focus();
+    return;
+  }
+
+  quickEditWindow = new BrowserWindow({
+    width: 600,
+    height: 700,
+    backgroundColor: '#0f172a',
+    title: 'Envoi Rapide',
+    autoHideMenuBar: true,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
+
+  quickEditWindow.loadFile('quick-edit.html');
+
+  quickEditWindow.webContents.once('did-finish-load', () => {
+    quickEditWindow.webContents.send('load-media', { filePath, type });
+  });
+
+  quickEditWindow.on('closed', () => {
+    quickEditWindow = null;
   });
 }
 
@@ -106,6 +146,52 @@ if (!gotTheLock) {
   });
 
   app.whenReady().then(() => {
+    // Démarrage automatique avec Windows en arrière-plan
+    app.setLoginItemSettings({
+      openAtLogin: true,
+      args: ['--hidden']
+    });
+
+    // Création de l'icône dans la barre des tâches (Tray)
+    const iconPath = path.join(__dirname, 'icon.ico');
+    let trayIcon = nativeImage.createEmpty();
+    if (fs.existsSync(iconPath)) {
+      trayIcon = nativeImage.createFromPath(iconPath);
+    }
+    
+    tray = new Tray(trayIcon);
+    tray.setToolTip('MemeScreen');
+    
+    const contextMenu = Menu.buildFromTemplate([
+      { label: 'Ouvrir MemeScreen', click: () => { if (mainWindow) mainWindow.show(); } },
+      { label: 'Envoyer un Média (Rapide)', click: () => {
+          dialog.showOpenDialog({
+            title: 'Sélectionner une image ou vidéo',
+            properties: ['openFile'],
+            filters: [
+              { name: 'Médias', extensions: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'webm', 'mov'] }
+            ]
+          }).then(result => {
+            if (!result.canceled && result.filePaths.length > 0) {
+              const filePath = result.filePaths[0];
+              const ext = path.extname(filePath).toLowerCase();
+              const type = ['.mp4', '.webm', '.mov'].includes(ext) ? 'video' : 'image';
+              createQuickEditWindow(filePath, type);
+            }
+          });
+        }
+      },
+      { type: 'separator' },
+      { label: 'Quitter', click: () => {
+          isQuitting = true;
+          app.quit();
+        } 
+      }
+    ]);
+    
+    tray.setContextMenu(contextMenu);
+    tray.on('double-click', () => { if (mainWindow) mainWindow.show(); });
+
     createWindow();
     createOverlayWindow();
     

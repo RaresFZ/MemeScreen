@@ -44,13 +44,6 @@ MemeScreen utilise l'infrastructure gratuite de Discord pour stocker et transfé
 
 ---
 
-## ⚙️ Raccourci d'Urgence
-
-Si ton ami t'envoie une vidéo de 30 secondes au pire moment de ta partie, tu peux utiliser le **Panic Button** :
-Appuie n'importe quand sur **`Ctrl + Shift + X`** (sur Windows) pour faire disparaître instantanément le média en cours de lecture.
-
----
-
 ## 🛠️ Pour les développeurs
 
 Si tu souhaites modifier le code ou lancer l'application en mode développement :

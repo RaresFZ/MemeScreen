@@ -1,0 +1,35 @@
+name: Build and Release MemeScreen
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'desktop-app/package-lock.json'
+          
+      - name: Install dependencies
+        working-directory: ./desktop-app
+        run: npm ci
+        
+      - name: Build and Publish with electron-builder
+        working-directory: ./desktop-app
+        env:
+          # GitHub fournit automatiquement ce token à l'Action. Pas besoin de le configurer manuellement !
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder -w -p always

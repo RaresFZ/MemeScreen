@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MemeScreen Desktop 🚀</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand">
+        <h2>MemeScreen 🚀</h2>
+      </div>
+      
+      <nav class="nav-menu">
+        <button id="nav-login" class="nav-item active">🔌 Connexion</button>
+        <button id="nav-main" class="nav-item" disabled>🏠 Accueil</button>
+        <button id="nav-editor" class="nav-item" disabled>🎨 Éditeur</button>
+        <button id="nav-settings" class="nav-item" disabled>⚙️ Paramètres</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="status-indicator">
+          <div class="indicator" id="botStatusDot"></div>
+          <span id="botStatusText">Déconnecté</span>
+        </div>
+        <button id="disconnectBtn" style="display:none;" class="btn-small mt-2">Déconnexion</button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="main-content">
+      
+      <!-- LOGIN SCREEN -->
+      <section id="loginScreen" class="view active">
+        <div class="card">
+          <h1>Connexion au Bot</h1>
+          <p>Associe ton application à ton Bot Discord.</p>
+          <div class="input-group">
+            <label>Token du Bot</label>
+            <input type="password" id="botToken" placeholder="MTCx..." />
+          </div>
+          <div class="input-group">
+            <label>ID du Salon Vocal / Texte</label>
+            <input type="text" id="channelId" placeholder="123456789..." />
+          </div>
+          <button id="connectBtn" class="primary-btn">Connecter 🚀</button>
+          <p id="connectionStatus" class="status-text"></p>
+        </div>
+      </section>
+
+      <!-- MAIN SCREEN -->
+      <section id="mainScreen" class="view">
+        <div class="card text-center">
+          <h1>Prêt à envoyer !</h1>
+          <p>Sélectionne une image ou une vidéo pour l'éditer.</p>
+          <button id="uploadBtn" class="primary-btn btn-lg">📂 Choisir un média</button>
+          <input type="file" id="mediaInput" accept="image/*,video/*" style="display: none;" />
+          <p id="uploadStatus" class="status-text mt-3"></p>
+          <p class="text-muted mt-2">⚠️ Limites : Vidéos (8 Mo max), Images (15 Mo max)</p>
+        </div>
+      </section>
+
+      <!-- EDITOR SCREEN -->
+      <section id="editorScreen" class="view">
+        <div class="editor-layout">
+          <div class="canvas-area">
+            <div id="mediaWrapper" class="media-wrapper">
+               <video id="memeVideo" style="display: none;" loop muted></video>
+               <canvas id="memeCanvas"></canvas>
+            </div>
+            
+            <div class="toolbar mt-3">
+              <button id="addTextBtn" class="btn-secondary">+ Ajouter Texte</button>
+              <button id="deleteTextBtn" class="btn-danger" disabled>🗑️ Supprimer</button>
+            </div>
+          </div>
+          
+          <div class="properties-area">
+            <div class="card" id="textProperties" style="display: none;">
+              <h3>Propriétés du texte</h3>
+              <div class="input-group">
+                <textarea id="selectedTextInput" placeholder="Texte..." class="prop-textarea"></textarea>
+              </div>
+              <div class="input-group">
+                <label>Taille (<span id="sizeValue">50</span>px)</label>
+                <input type="range" id="sizeSlider" min="20" max="250" value="50" />
+              </div>
+            </div>
+            
+            <div class="editor-actions mt-3">
+              <button id="cancelMemeBtn" class="btn-secondary w-100 mb-2">Annuler</button>
+              <button id="sendMemeBtn" class="primary-btn w-100">Envoyer 🚀</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS SCREEN -->
+      <section id="settingsScreen" class="view">
+        <div class="card">
+          <h1>Paramètres ⚙️</h1>
+          <div class="settings-grid">
+            <div class="input-group">
+              <label>Durée de l'image (<span id="durationValue">7</span>s)</label>
+              <input type="range" id="durationSlider" min="3" max="30" value="7" />
+            </div>
+            <div class="input-group">
+              <label>Taille du Widget (<span id="scaleValue">100</span>%)</label>
+              <input type="range" id="scaleSlider" min="20" max="500" step="10" value="100" />
+            </div>
+            <div class="input-group">
+              <label>Position</label>
+              <select id="positionSelect">
+                <option value="bottom-right">En bas à droite</option>
+                <option value="top-right">En haut à droite</option>
+                <option value="bottom-left">En bas à gauche</option>
+                <option value="top-left">En haut à gauche</option>
+                <option value="center">Au centre</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label>Volume Vidéo (<span id="volumeValue">50</span>%)</label>
+              <input type="range" id="volumeSlider" min="0" max="100" value="50" />
+            </div>
+          </div>
+          <button id="saveSettingsBtn" class="primary-btn mt-4">Sauvegarder</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

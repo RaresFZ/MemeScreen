@@ -1,0 +1,35 @@
+{
+  "name": "memescreen-desktop",
+  "version": "1.0.0",
+  "description": "MemeScreen Desktop App",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder -w"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^30.0.1",
+    "electron-builder": "^24.13.3"
+  },
+  "repository": "github:RaresFZ/MemeScreen",
+  "build": {
+    "appId": "com.memescreen.app",
+    "publish": [{
+      "provider": "github",
+      "owner": "RaresFZ",
+      "repo": "MemeScreen"
+    }],
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico"
+    }
+  },
+  "dependencies": {
+    "discord.js": "^14.26.4",
+    "electron-updater": "^6.8.9",
+    "ffmpeg-static": "^5.3.0",
+    "fluent-ffmpeg": "^2.1.3"
+  }
+}

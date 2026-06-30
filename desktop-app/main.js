@@ -228,6 +228,10 @@ autoUpdater.on('update-downloaded', (info) => {
   });
 });
 
+app.on('before-quit', () => {
+  isQuitting = true;
+});
+
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });

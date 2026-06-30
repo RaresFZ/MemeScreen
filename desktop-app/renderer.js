@@ -360,6 +360,30 @@ const soundSearchBtn = document.getElementById('soundSearchBtn');
 const soundResults = document.getElementById('soundResults');
 const selectedSoundName = document.getElementById('selectedSoundName');
 const clearSoundBtn = document.getElementById('clearSoundBtn');
+const previewControls = document.getElementById('previewControls');
+const previewVolume = document.getElementById('previewVolume');
+const stopPreviewBtn = document.getElementById('stopPreviewBtn');
+
+let currentPreviewAudio = null;
+
+if (previewVolume) {
+  previewVolume.addEventListener('input', (e) => {
+    if (currentPreviewAudio) {
+      currentPreviewAudio.volume = e.target.value;
+    }
+  });
+}
+
+if (stopPreviewBtn) {
+  stopPreviewBtn.addEventListener('click', () => {
+    if (currentPreviewAudio) {
+      currentPreviewAudio.pause();
+      currentPreviewAudio.currentTime = 0;
+      currentPreviewAudio = null;
+      stopPreviewBtn.style.display = 'none';
+    }
+  });
+}
 
 if (soundSearchBtn) {
   soundSearchBtn.addEventListener('click', async () => {
@@ -369,6 +393,7 @@ if (soundSearchBtn) {
     soundSearchBtn.disabled = true;
     soundSearchBtn.textContent = "⏳";
     soundResults.style.display = 'block';
+    if (previewControls) previewControls.style.display = 'flex';
     soundResults.innerHTML = '<p class="text-muted" style="text-align:center;">Recherche...</p>';
     
     try {
@@ -391,14 +416,50 @@ if (soundSearchBtn) {
           nameSpan.style.fontWeight = 'bold';
           nameSpan.style.fontSize = '0.9em';
           
+          const buttonsDiv = document.createElement('div');
+          buttonsDiv.style.display = 'flex';
+          buttonsDiv.style.gap = '5px';
+
+          const previewBtn = document.createElement('button');
+          previewBtn.textContent = "▶️";
+          previewBtn.className = "btn-small btn-secondary";
+          previewBtn.style.padding = "2px 5px";
+          previewBtn.title = "Écouter un aperçu";
+          previewBtn.onclick = () => {
+            if (currentPreviewAudio) {
+              currentPreviewAudio.pause();
+              currentPreviewAudio.currentTime = 0;
+            }
+            currentPreviewAudio = new Audio(instant.sound);
+            currentPreviewAudio.volume = previewVolume ? previewVolume.value : 0.5;
+            currentPreviewAudio.play();
+            
+            if (stopPreviewBtn) stopPreviewBtn.style.display = 'inline-block';
+            
+            currentPreviewAudio.onended = () => {
+              if (stopPreviewBtn && currentPreviewAudio) {
+                stopPreviewBtn.style.display = 'none';
+              }
+            };
+          };
+
           const selectBtn = document.createElement('button');
           selectBtn.textContent = "Choisir";
           selectBtn.className = "btn-small primary-btn";
           selectBtn.style.padding = "2px 8px";
           selectBtn.onclick = async () => {
+            if (currentPreviewAudio) {
+              currentPreviewAudio.pause();
+              currentPreviewAudio.currentTime = 0;
+              currentPreviewAudio = null;
+              if (stopPreviewBtn) stopPreviewBtn.style.display = 'none';
+            }
+            
             selectedSoundName.textContent = "Téléchargement...";
             selectedSoundName.style.color = "#fbbf24";
             soundResults.style.display = 'none';
+            if (previewControls) previewControls.style.display = 'none';
+            
             try {
               const soundRes = await fetch(instant.sound);
               const arrayBuffer = await soundRes.arrayBuffer();
@@ -409,15 +470,18 @@ if (soundSearchBtn) {
               soundSelect.value = tempSoundPath;
               selectedSoundName.textContent = instant.name;
               selectedSoundName.style.color = "#10b981";
-              clearSoundBtn.style.display = 'inline-block';
+              clearSoundBtn.style.display = 'flex';
             } catch (err) {
               selectedSoundName.textContent = "Erreur !";
               selectedSoundName.style.color = "#ef4444";
             }
           };
           
+          buttonsDiv.appendChild(previewBtn);
+          buttonsDiv.appendChild(selectBtn);
+
           div.appendChild(nameSpan);
-          div.appendChild(selectBtn);
+          div.appendChild(buttonsDiv);
           soundResults.appendChild(div);
         });
       } else {
@@ -664,12 +728,14 @@ if (!fs.existsSync(favoritesDir)) {
 
 let macros = JSON.parse(localStorage.getItem('memescreen_macros') || '[]');
 
+let editingMacroId = null;
+
 function renderMacros() {
   const favoritesList = document.getElementById('favoritesList');
   if (!favoritesList) return;
   favoritesList.innerHTML = '';
   if (macros.length === 0) {
-    favoritesList.innerHTML = '<p class="text-muted" style="grid-column: span 2; text-align: center; margin-top: 20px;">Aucun favori enregistré. Clique sur "⭐ Ajouter aux favoris" dans l\'éditeur pour commencer.</p>';
+    favoritesList.innerHTML = '<div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 150px; text-align: center;"><p class="text-muted" style="margin:0; line-height: 1.5;">Aucun favori enregistré.<br>Clique sur "⭐ Ajouter aux favoris" dans l\'éditeur pour commencer.</p></div>';
     return;
   }
   
@@ -681,9 +747,10 @@ function renderMacros() {
     div.innerHTML = `
       <h4 style="margin-bottom: 5px; color: var(--primary);">${macro.name}</h4>
       <p style="font-size: 0.8rem; margin-bottom: 10px;">Raccourci: <kbd style="background:#333; padding:2px 5px; border-radius:3px;">${macro.shortcut || 'Aucun'}</kbd></p>
-      <div style="display: flex; gap: 10px;">
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
         <button class="primary-btn btn-small" style="flex:1;" onclick="executeMacro('${macro.id}')">🚀 Envoyer</button>
-        <button class="btn-danger btn-small" onclick="deleteMacro('${macro.id}')">🗑️</button>
+        <button class="btn-secondary btn-small" style="padding: 2px 8px;" title="Modifier le nom/raccourci" onclick="editMacro('${macro.id}')">✏️</button>
+        <button class="btn-danger btn-small" style="padding: 2px 8px;" title="Supprimer" onclick="deleteMacro('${macro.id}')">🗑️</button>
       </div>
     `;
     favoritesList.appendChild(div);
@@ -695,6 +762,15 @@ window.deleteMacro = (id) => {
   localStorage.setItem('memescreen_macros', JSON.stringify(macros));
   renderMacros();
   ipcRenderer.send('update-macros', macros);
+};
+
+window.editMacro = (id) => {
+  const m = macros.find(m => m.id === id);
+  if (!m) return;
+  editingMacroId = id;
+  favNameInput.value = m.name;
+  favShortcutInput.value = m.shortcut || '';
+  favoriteModal.style.display = 'flex';
 };
 
 window.executeMacro = async (id) => {
@@ -776,6 +852,7 @@ const saveFavBtn = document.getElementById('saveFavBtn');
 if (favoriteMemeBtn) {
   favoriteMemeBtn.addEventListener('click', () => {
     if (!currentMediaPath) return;
+    editingMacroId = null;
     favNameInput.value = '';
     favShortcutInput.value = '';
     favoriteModal.style.display = 'flex';
@@ -795,6 +872,19 @@ if (saveFavBtn) {
     const shortcut = favShortcutInput.value.trim();
     
     favoriteModal.style.display = 'none';
+    
+    if (editingMacroId) {
+      const m = macros.find(m => m.id === editingMacroId);
+      if (m) {
+        m.name = name;
+        m.shortcut = shortcut || null;
+        localStorage.setItem('memescreen_macros', JSON.stringify(macros));
+        renderMacros();
+        ipcRenderer.send('update-macros', macros);
+      }
+      editingMacroId = null;
+      return;
+    }
     
     let mediaPath = currentMediaPath;
     if (mediaPath) {

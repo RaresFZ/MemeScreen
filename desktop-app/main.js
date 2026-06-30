@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, screen, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, dialog, globalShortcut } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -114,6 +114,13 @@ if (!gotTheLock) {
 
     // Check for updates automatically in the background
     autoUpdater.checkForUpdatesAndNotify();
+    
+    // Enregistrement du raccourci global pour couper l'overlay
+    globalShortcut.register('CommandOrControl+²', () => {
+      if (overlayWindow) {
+        overlayWindow.webContents.send('force-close-media');
+      }
+    });
   });
 }
 
@@ -133,6 +140,10 @@ autoUpdater.on('update-downloaded', (info) => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
 });
 
 // --- DISCORD LOGIC ---
@@ -235,8 +246,10 @@ ipcMain.on('process-video', async (event, { inputPath, texts, width, height }) =
   const command = ffmpeg(inputPath)
     .outputOptions([
       '-c:v libx264',
-      '-preset ultrafast', // Traitement rapide
-      '-crf 28',           // Forte compression pour rester sous les 8/25Mo
+      '-preset veryfast', // Meilleur ratio vitesse/poids que ultrafast
+      '-b:v 1500k',       // Force un bitrate max de 1.5 Mbps (environ 11 Mo par minute max)
+      '-maxrate 1500k',
+      '-bufsize 3000k',
       '-c:a aac',
       '-b:a 128k'
     ]);
@@ -247,13 +260,21 @@ ipcMain.on('process-video', async (event, { inputPath, texts, width, height }) =
   
   command.save(tempPath)
     .on('end', async () => {
+      let fileSizeInMegabytes = 0;
       try {
+        const stats = fs.statSync(tempPath);
+        fileSizeInMegabytes = (stats.size / (1024 * 1024)).toFixed(2);
+        
         const channel = await discordClient.channels.fetch(discordClient.targetChannelId);
         const attachment = new AttachmentBuilder(tempPath, { name: 'meme.mp4' });
         await channel.send({ files: [attachment] });
         event.reply('upload-status', { success: true });
       } catch (err) {
-        event.reply('upload-status', { success: false, error: err.message });
+        let msg = err.message;
+        if (fileSizeInMegabytes > 0) {
+          msg = `${msg} (Taille tentée : ${fileSizeInMegabytes} Mo)`;
+        }
+        event.reply('upload-status', { success: false, error: msg });
       }
     })
     .on('error', (err) => {

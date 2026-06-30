@@ -89,7 +89,12 @@ function startProgressBar(durationMs) {
   }, 16); // ~60fps smooth animation
 }
 
+let isClosing = false;
+
 function endTakeover() {
+  if (isClosing) return;
+  isClosing = true;
+  
   widgetContainer.classList.remove('active');
   
   if (progressInterval) clearInterval(progressInterval);
@@ -98,6 +103,13 @@ function endTakeover() {
   setTimeout(() => {
     mediaContainer.innerHTML = '';
     currentMedia = null;
+    isClosing = false;
     processQueue();
   }, 500); 
 }
+
+ipcRenderer.on('force-close-media', () => {
+  if (currentMedia !== null) {
+    endTakeover();
+  }
+});

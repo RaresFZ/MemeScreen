@@ -306,15 +306,50 @@ ipcMain.on('discord-login', async (event, { token, channelId }) => {
       }
       
       // Hidden Message: In-App Vote
-      if (message.content.startsWith('[MemeScreenVote]')) {
-        // Do not read this via TTS, just process it below
+      if (message.content.startsWith('[MemeScreen')) {
+          // Do not read this via TTS, just process it below
       } else if (message.content) {
         if (overlayWindow) {
           overlayWindow.webContents.send('new-text', { text: message.content });
         }
       }
       
-      // Process Hidden Message: In-App Vote
+      
+        // Process Hidden Message: Troll Sync
+        if (message.content.startsWith('[MemeScreenTrollStart]')) {
+          const parts = message.content.substring(23).split(' ');
+          const target = parts[0];
+          const optionsStr = parts.slice(1).join(' ');
+          try {
+            const options = JSON.parse(optionsStr);
+            if (!activeTrollVote) {
+              const windows = require('electron').BrowserWindow.getAllWindows();
+              windows.forEach(w => {
+                try { w.webContents.send('troll-vote-started', { target, duration: 15, options }); } catch(e){}
+              });
+            }
+            message.delete().catch(()=>{}).then();
+          } catch(e) {}
+          return;
+        }
+        
+        if (message.content.startsWith('[MemeScreenTrollEnd]')) {
+          const parts = message.content.split(' ');
+          const target = parts[1];
+          const winnerChoice = parts[2];
+          const winningId = parts[3];
+          
+          const windows = require('electron').BrowserWindow.getAllWindows();
+          windows.forEach(w => {
+            try { w.webContents.send('troll-vote-ended', { winner: winnerChoice, target }); } catch(e){}
+            try { w.webContents.send('execute-troll', { type: winningId, target }); } catch(e){}
+          });
+          
+          try { message.delete().catch(()=>{}).then(); } catch(e){}
+          return;
+        }
+
+        // Process Hidden Message: In-App Vote
       if (message.content.startsWith('[MemeScreenVote]')) {
         const parts = message.content.split(' ');
         if (parts.length >= 4) {

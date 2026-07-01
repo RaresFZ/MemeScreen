@@ -34,8 +34,12 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 900,
+    minWidth: 1000,
+    minHeight: 700,
     backgroundColor: '#000000',
     show: false,
+    frame: false,
+    icon: path.join(__dirname, 'icon.png'),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -153,10 +157,12 @@ if (!gotTheLock) {
     });
 
     // Création de l'icône dans la barre des tâches (Tray)
-    const iconPath = path.join(__dirname, 'icon.ico');
+    const iconPath = path.join(__dirname, 'icon.png');
     let trayIcon = nativeImage.createEmpty();
     if (fs.existsSync(iconPath)) {
       trayIcon = nativeImage.createFromPath(iconPath);
+      // Ensure the icon is resized correctly for the tray on Windows
+      trayIcon = trayIcon.resize({ width: 16, height: 16 });
     }
     
     tray = new Tray(trayIcon);
@@ -348,9 +354,28 @@ ipcMain.on('update-settings', (event, settings) => {
 ipcMain.on('set-autostart', (event, enable) => {
   app.setLoginItemSettings({
     openAtLogin: enable,
+    openAsHidden: enable,
     path: app.getPath('exe'),
     args: ['--hidden']
   });
+});
+
+ipcMain.on('window-min', () => {
+  if (mainWindow) mainWindow.minimize();
+});
+ipcMain.on('window-max', () => {
+  if (mainWindow) {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+    } else {
+      mainWindow.maximize();
+    }
+  }
+});
+ipcMain.on('window-close', () => {
+  if (mainWindow) {
+    mainWindow.close();
+  }
 });
 
 let currentMacros = [];

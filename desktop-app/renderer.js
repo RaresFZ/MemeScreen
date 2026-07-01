@@ -98,6 +98,33 @@ const volumeValue = document.getElementById('volumeValue');
 const positionSelect = document.getElementById('positionSelectSettings');
 const saveSettingsBtn = document.getElementById('saveSettingsBtn');
 
+// Window controls
+document.getElementById('minBtn').addEventListener('click', () => ipcRenderer.send('window-min'));
+document.getElementById('maxBtn').addEventListener('click', () => ipcRenderer.send('window-max'));
+document.getElementById('closeBtn').addEventListener('click', () => ipcRenderer.send('window-close'));
+
+// HUD Live Logs Simulation
+const liveLogs = document.getElementById('liveLogs');
+const logMessages = [
+  "CONNECTING TO OVERLAY...",
+  "UPDATING MEDIA CACHE.",
+  "FETCHING DISCORD STATUS...",
+  "SYS_MEM: ALLOCATED 1024MB",
+  "AWAITING COMMAND...",
+  "SYNCING MACROS...",
+  "PING: 14ms",
+  "RENDER ENGINE: OK"
+];
+setInterval(() => {
+  if (!liveLogs) return;
+  const newLog = document.createElement('div');
+  newLog.textContent = "> " + logMessages[Math.floor(Math.random() * logMessages.length)];
+  liveLogs.appendChild(newLog);
+  if (liveLogs.childElementCount > 15) {
+    liveLogs.removeChild(liveLogs.firstChild);
+  }
+}, 3000);
+
 let appSettings = { duration: 7, scale: 100, volume: 50, position: 'bottom-right' };
 const storedSettings = localStorage.getItem('memescreen_settings');
 if (storedSettings) {
@@ -232,15 +259,15 @@ if (gifSearchBtn) {
     const query = gifSearchInput.value.trim();
     if (!query) return;
     
-    gifGrid.innerHTML = '<p class="text-muted" style="grid-column: span 3; text-align: center;">Recherche en cours... ⏳</p>';
+    gifGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center;"><p class="text-muted">Recherche en cours... ⏳</p></div>';
     
     try {
-      const res = await fetch(`https://api.tenor.com/v1/search?q=${encodeURIComponent(query)}&key=LIVDSRZULELA&limit=15`);
+      const res = await fetch(`https://api.tenor.com/v1/search?q=${encodeURIComponent(query)}&key=LIVDSRZULELA&limit=50`);
       const data = await res.json();
       
       gifGrid.innerHTML = '';
       if (data.results.length === 0) {
-        gifGrid.innerHTML = '<p class="text-muted" style="grid-column: span 3; text-align: center;">Aucun résultat.</p>';
+        gifGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center;"><p class="text-muted">Aucun résultat.</p></div>';
         return;
       }
       
@@ -248,13 +275,13 @@ if (gifSearchBtn) {
         const img = document.createElement('img');
         img.src = gif.media[0].tinygif.url; // Use tinygif for preview
         img.style.width = '100%';
-        img.style.height = '100px';
+        img.style.height = '150px';
         img.style.objectFit = 'cover';
         img.style.borderRadius = '5px';
         img.style.cursor = 'pointer';
         
         img.addEventListener('click', async () => {
-          gifGrid.innerHTML = '<p class="text-muted" style="grid-column: span 3; text-align: center;">Téléchargement du GIF... ⏳</p>';
+          gifGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center;"><p class="text-muted">Téléchargement du GIF... ⏳</p></div>';
           try {
             const bufRes = await fetch(gif.media[0].gif.url);
             const blob = await bufRes.blob();
@@ -269,14 +296,14 @@ if (gifSearchBtn) {
             
             gifSearchBtn.click(); // re-fetch to restore grid
           } catch (e) {
-            gifGrid.innerHTML = '<p class="text-muted" style="grid-column: span 3; text-align: center; color:#ef4444;">Erreur.</p>';
+            gifGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center;"><p class="text-muted" style="color:#ef4444;">Erreur.</p></div>';
           }
         });
         
         gifGrid.appendChild(img);
       });
     } catch (error) {
-      gifGrid.innerHTML = '<p class="text-muted" style="grid-column: span 3; text-align: center; color:#ef4444;">Erreur API.</p>';
+      gifGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center;"><p class="text-muted" style="color:#ef4444;">Erreur API.</p></div>';
     }
   });
   
@@ -756,9 +783,7 @@ function renderMacros() {
   
   macros.forEach(macro => {
     const div = document.createElement('div');
-    div.className = 'card';
-    div.style.padding = '15px';
-    div.style.marginTop = '0';
+    div.className = 'fav-item';
     div.innerHTML = `
       <h4 style="margin-bottom: 5px; color: var(--primary);">${macro.name}</h4>
       <p style="font-size: 0.8rem; margin-bottom: 10px;">Raccourci: <kbd style="background:#333; padding:2px 5px; border-radius:3px;">${macro.shortcut || 'Aucun'}</kbd></p>

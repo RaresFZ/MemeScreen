@@ -8,6 +8,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
+  
+  <div class="title-bar">
+    <div class="title-bar-drag">MemeScreen Desktop 🚀</div>
+    <div class="title-bar-controls">
+      <button id="minBtn" class="win-btn">−</button>
+      <button id="maxBtn" class="win-btn">□</button>
+      <button id="closeBtn" class="win-btn close-btn">✕</button>
+    </div>
+  </div>
 
   <div class="app-layout">
     <!-- SIDEBAR -->
@@ -78,7 +87,7 @@
         <div class="tab-content active" id="tab-local">
           <div class="editor-layout">
             <div class="canvas-area">
-              <div id="mediaPlaceholder" class="card text-center" style="margin: 0 auto; max-width: 600px;">
+              <div id="mediaPlaceholder" class="card text-center" style="margin: auto;">
                  <h1>Éditeur de Média</h1>
                  <p>Sélectionne une image ou une vidéo de ton PC pour y ajouter du texte et du son.</p>
                  <button id="selectMediaBtn" class="primary-btn btn-lg">📂 Choisir un média (PC)</button>
@@ -149,23 +158,25 @@
         <!-- Tab: GIF Search -->
         <div class="tab-content" id="tab-gif" style="padding: 20px;">
           <div class="card" style="margin-top: 0; max-width: 100%;">
-            <div style="display:flex; gap:10px; margin-bottom: 20px;">
+            <div style="display:flex; gap:10px; margin-bottom: 20px; width: 100%;">
               <input type="text" id="gifSearchInput" placeholder="Rechercher un GIF..." style="flex:1; padding:10px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:white;">
               <button id="gifSearchBtn" class="primary-btn" style="width:auto;">Chercher</button>
             </div>
-            <div id="gifGrid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 400px; overflow-y: auto; background: #0f172a; padding: 10px; border-radius: 8px;">
+            <div id="gifGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; max-height: calc(100vh - 220px); overflow-y: auto; background: #0f172a; padding: 15px; border-radius: 8px; width: 100%;">
               <!-- GIFs will be injected here -->
-              <p class="text-muted" style="grid-column: span 3; text-align: center; margin-top: 20px;">Tape une recherche pour trouver un GIF animé !</p>
+              <div style="grid-column: 1 / -1; text-align: center; margin-top: 20px;">
+                <p class="text-muted">Tape une recherche pour trouver un GIF animé !</p>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Tab: TTS -->
         <div class="tab-content" id="tab-tts" style="padding: 20px;">
-          <div class="card" style="margin-top: 0; max-width: 100%;">
-            <h3>Faire parler l'overlay 🔊</h3>
+          <div class="card" style="margin-top: 0; max-width: 100%; flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 20px;">
+            <h3 style="margin-top:0;">Faire parler l'overlay 🔊</h3>
             <p class="text-muted">Le texte s'affichera à l'écran et sera lu par une voix robotique.</p>
-            <textarea id="ttsInput" placeholder="Tape le message à lire à haute voix..." style="width:100%; height:150px; padding:15px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:white; font-size:18px; resize:none; margin-bottom: 15px; box-sizing:border-box;"></textarea>
+            <textarea id="ttsInput" placeholder="Tape le message à lire à haute voix..." style="flex: 1; padding:15px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:white; font-size:18px; resize:none; margin-bottom: 15px; box-sizing:border-box; min-height: 150px;"></textarea>
             <button id="sendTtsBtn" class="primary-btn btn-lg w-100">Envoyer le message TTS 🚀</button>
             <div id="ttsStatus" class="status-message mt-2" style="text-align: center;"></div>
           </div>
@@ -173,10 +184,10 @@
 
         <!-- Tab: Favorites -->
         <div class="tab-content" id="tab-favorites" style="padding: 20px;">
-          <div class="card" style="margin-top: 0; max-width: 100%;">
-            <h3>Tes Mèmes Favoris ⭐</h3>
+          <div class="card" style="margin-top: 0; max-width: 100%; flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 20px;">
+            <h3 style="margin-top:0;">Tes Mèmes Favoris ⭐</h3>
             <p class="text-muted">Sauvegarde tes mèmes (médias, textes, sons) pour les envoyer en un clic ! Tu peux définir un raccourci clavier global (ex: Ctrl+Alt+1) pour envoyer ton mème même quand l'appli est réduite.</p>
-            <div id="favoritesList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; max-height: 400px; overflow-y: auto; background: #0f172a; padding: 15px; border-radius: 8px;">
+            <div id="favoritesList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; flex: 1; overflow-y: auto; background: #0f172a; padding: 15px; border-radius: 8px; align-content: start; min-height: 0; width: 100%;">
               <!-- Favorites will be injected here -->
             </div>
           </div>
@@ -224,6 +235,29 @@
       </section>
 
     </main>
+
+    <!-- RIGHT DECORATIVE HUD -->
+    <aside class="right-hud">
+      <div class="hud-box">
+        <h4>SYS_STATUS</h4>
+        <p>MEM: <span style="color:#0f0;">OK (32%)</span></p>
+        <p>CPU: <span style="color:#0f0;">STABLE</span></p>
+        <p>NET: <span style="color:#ffff00;" id="hud-net">CONNECTED</span></p>
+      </div>
+      <div class="hud-box" style="flex: 1;">
+        <h4>LIVE LOGS</h4>
+        <div id="liveLogs" class="logs-container">
+          <div>> INITIALIZING...</div>
+          <div>> BOOT SEQUENCE OK.</div>
+          <div>> WAITING FOR USER INPUT...</div>
+        </div>
+      </div>
+      <div class="hud-box decorative-box">
+        <div class="barcode"></div>
+        <p style="text-align: center; font-size: 0.7rem; color: #666; margin-top: 5px;">M-SCREEN v1.0.9</p>
+      </div>
+    </aside>
+
   </div>
 
   <div id="appVersion" style="position: absolute; bottom: 10px; right: 15px; font-size: 12px; color: #94a3b8; font-weight: 600; letter-spacing: 0.5px; z-index: 1000;"></div>

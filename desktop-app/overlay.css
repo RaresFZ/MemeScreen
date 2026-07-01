@@ -7,26 +7,30 @@ body {
   overflow: hidden;
   background-color: transparent !important;
   position: relative;
+  font-family: 'Courier New', Courier, monospace;
 }
 
 :root {
   --overlay-scale: 1;
+  --primary: #ffff00;
+  --bg-color: #000000;
 }
 
 .widget-container {
   position: absolute;
-  width: 400px;
-  border-radius: 12px;
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  width: 350px;
+  background: var(--bg-color);
+  border: 1px solid var(--primary);
+  box-shadow: 4px 4px 0px var(--primary);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  
   opacity: 0;
   transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s;
+  background-image: 
+    linear-gradient(rgba(0, 255, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 0, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
 /* Positions & Animations */
@@ -47,33 +51,33 @@ body {
 
 .media-container {
   width: 100%;
-  max-height: 300px;
+  max-height: 400px;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #000;
+  background: transparent;
+  padding: 5px;
+  box-sizing: border-box;
 }
 
 .media-container img,
 .media-container video {
   width: 100%;
   height: auto;
-  max-height: 300px;
+  max-height: 370px;
   object-fit: contain;
 }
 
 /* ProgressBar */
 .progress-bar-container {
   width: 100%;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.1);
+  height: 4px;
+  background: #222;
 }
 
 .progress-bar {
   height: 100%;
   width: 100%;
-  background: linear-gradient(to right, #3b82f6, #a78bfa);
+  background: var(--primary);
   transform-origin: left;
 }
-
-/* We control the progress bar shrinking from 100% to 0% linearly */

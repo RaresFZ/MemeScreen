@@ -15,6 +15,97 @@
     </div>
   </div>
 
+  <!-- TROLL FULLSCREEN CONTAINER -->
+  <div id="trollContainer" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:999999; pointer-events:none; overflow:hidden;">
+    
+    <!-- 1. Flashbang -->
+    <div id="troll-flashbang" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:white; opacity:0; transition:opacity 2s;"></div>
+    
+    <!-- 2. BSOD -->
+    <div id="troll-bsod" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:#0078D7; color:white; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding:100px; box-sizing:border-box;">
+      <h1 style="font-size:120px; margin:0 0 40px 0; font-weight:normal;">:(</h1>
+      <h2 style="font-size:32px; font-weight:normal; margin-bottom:20px;">Votre ordinateur a rencontré un problème et doit redémarrer. Nous collectons simplement des informations relatives aux erreurs, puis nous allons redémarrer l'ordinateur.</h2>
+      <p style="font-size:24px;">25% achevé</p>
+      <div style="margin-top:60px; display:flex; align-items:center; gap:20px;">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://windows.com/stopcode" width="100" height="100" style="background:white; padding:5px;">
+        <div>
+          <p style="margin:0; font-size:18px;">Pour en savoir plus sur ce problème, visitez https://windows.com/stopcode</p>
+          <p style="margin:5px 0 0 0; font-size:16px;">Code d'arrêt : CRITICAL_PROCESS_DIED</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 3. DVD Bouncing -->
+    <svg id="troll-dvd" width="300" height="150" style="display:none; position:absolute; top:0px; left:0px; fill:#00f;" viewBox="0 0 300 150">
+      <ellipse cx="150" cy="75" rx="140" ry="60" />
+      <text x="150" y="85" font-family="Impact" font-size="70" fill="#000" text-anchor="middle" alignment-baseline="middle">DVD</text>
+    </svg>
+    
+    <!-- 4. Fake Windows Update -->
+    <div id="troll-update" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:#0078D7; flex-direction:column; justify-content:center; align-items:center; color:white; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; cursor:none; pointer-events:all;">
+      <style>
+        .win-spinner { display: inline-block; width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 1s ease-in-out infinite; margin-bottom: 30px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      </style>
+      <div class="win-spinner"></div>
+      <h1 style="font-size:32px; font-weight:normal; margin-bottom:15px; text-align:center;">Installation des mises à jour : <span id="winup-percent">0</span>%</h1>
+      <p style="font-size:24px; text-align:center;">N'éteignez pas votre ordinateur. Cela va prendre un moment.</p>
+      <p style="font-size:18px; margin-top:100px; text-align:center; opacity:0.8;">Votre PC va redémarrer à plusieurs reprises.</p>
+    </div>
+
+    <!-- 5. Screen Crack -->
+    <div id="troll-crack" style="display:none; position:absolute; top:0; left:0; width:100vw; height:100vh; z-index:9999999; pointer-events:none;">
+      <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style="opacity: 0.85; filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.8));">
+        <g stroke="#ffffff" stroke-width="0.3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Main starburst cracks -->
+          <path d="M50,50 L10,0 M50,50 L90,0 M50,50 L100,30 M50,50 L100,70 M50,50 L80,100 M50,50 L20,100 M50,50 L0,70 M50,50 L0,30" />
+          <!-- Spider web concentric rings -->
+          <path d="M40,40 L60,40 L60,60 L40,60 Z M30,30 L70,30 L70,70 L30,70 Z" opacity="0.5"/>
+          <path d="M50,50 Q 40,30 20,10 M50,50 Q 70,40 95,20 M50,50 Q 60,80 40,95" />
+          <!-- Extra shards -->
+          <path d="M45,50 L55,45 M48,55 L52,60 M40,45 L35,35 M60,55 L75,65" stroke-width="0.5" />
+        </g>
+        <g stroke="#000000" stroke-width="0.15" fill="none" opacity="0.6">
+          <path d="M50.2,50.2 L10.2,0.2 M50.2,50.2 L90.2,0.2 M50.2,50.2 L100.2,30.2 M50.2,50.2 L100.2,70.2 M50.2,50.2 L80.2,100.2 M50.2,50.2 L20.2,100.2 M50.2,50.2 L0.2,70.2 M50.2,50.2 L0.2,30.2" />
+        </g>
+      </svg>
+    </div>
+
+    <!-- 6. Discord Call -->
+    <div id="troll-discord-call" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:320px; background:#313338; border-radius:8px; padding:30px 20px; flex-direction:column; align-items:center; color:white; font-family:'gg sans', 'Segoe UI', sans-serif; box-shadow:0 8px 30px rgba(0,0,0,0.5); pointer-events:all; cursor:none;">
+      <div style="width: 100px; height: 100px; border-radius: 50%; background: #5865F2; display: flex; align-items: center; justify-content: center; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); overflow: hidden;">
+        <img src="https://cdn.discordapp.com/embed/avatars/0.png" style="width:100px; height:100px;">
+      </div>
+      <h2 style="margin:0 0 5px 0; font-size: 22px; font-weight: 600;">The Trollmaster</h2>
+      <p style="color:#b9bbbe; margin:0 0 35px 0; font-size: 15px; font-weight: 500;">Appel entrant...</p>
+      <div style="display:flex; gap:20px;">
+        <!-- Red cross button -->
+        <button style="background:#ed4245; color:white; border:none; width:60px; height:60px; border-radius:16px; cursor:none; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 15px rgba(237,66,69,0.3);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M18.4 4L12 10.4L5.6 4L4 5.6L10.4 12L4 18.4L5.6 20L12 13.6L18.4 20L20 18.4L13.6 12L20 5.6L18.4 4Z"/></svg>
+        </button>
+        <!-- Green phone button -->
+        <button style="background:#3ba55d; color:white; border:none; width:60px; height:60px; border-radius:16px; cursor:none; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 15px rgba(59,165,93,0.3);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M20 15.5C18.8 15.5 17.5 15.3 16.4 14.9C16.1 14.8 15.7 14.9 15.4 15.2L13.2 17.4C10.4 15.9 8 13.6 6.6 10.8L8.8 8.6C9.1 8.3 9.2 7.9 9.1 7.6C8.7 6.5 8.5 5.2 8.5 4C8.5 3.5 8.1 3 7.5 3H4C3.5 3 3 3.5 3 4C3 13.4 10.6 21 20 21C20.5 21 21 20.5 21 20V16.5C21 15.9 20.5 15.5 20 15.5Z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 7. The Fly -->
+    <img id="troll-fly" src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/1fab0.png" style="display:none; position:absolute; top:10%; left:10%; width:80px; height:80px; z-index:9999999; filter:drop-shadow(2px 2px 2px rgba(0,0,0,0.5));">
+
+    <!-- 8. Matrix Rain -->
+    <canvas id="troll-matrix" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:black; opacity:0.9;"></canvas>
+
+    <!-- 9. Hacker CMD -->
+    <div id="troll-hacker" style="display:none; position:absolute; top:20%; left:20%; width:60%; height:60%; background:black; color:#0f0; font-family:monospace; padding:10px; border:2px solid #333; overflow:hidden; font-size:16px;">
+      <div id="hacker-text" style="white-space: pre-wrap;"></div>
+    </div>
+
+    <!-- 10. Notification Spam -->
+    <div id="troll-notif-container" style="display:none; position:absolute; bottom:20px; right:20px; flex-direction:column; gap:10px; align-items:flex-end;"></div>
+    
+  </div>
+
   <script src="overlay.js"></script>
 </body>
 </html>

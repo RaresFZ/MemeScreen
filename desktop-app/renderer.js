@@ -8,6 +8,7 @@ const views = {
   login: document.getElementById('loginScreen'),
   main: document.getElementById('mainScreen'),
   editor: document.getElementById('editorScreen'),
+  troll: document.getElementById('trollScreen'),
   settings: document.getElementById('settingsScreen')
 };
 
@@ -15,6 +16,7 @@ const navItems = {
   login: document.getElementById('nav-login'),
   main: document.getElementById('nav-main'),
   editor: document.getElementById('nav-editor'),
+  troll: document.getElementById('nav-troll'),
   settings: document.getElementById('nav-settings')
 };
 
@@ -72,6 +74,7 @@ function showView(viewName) {
 navItems.login.addEventListener('click', () => showView('login'));
 navItems.main.addEventListener('click', () => showView('main'));
 navItems.editor.addEventListener('click', () => showView('editor'));
+navItems.troll.addEventListener('click', () => showView('troll'));
 navItems.settings.addEventListener('click', () => showView('settings'));
 
 // --- TABS LOGIC ---
@@ -140,6 +143,10 @@ if (volumeSlider) volumeSlider.value = appSettings.volume;
 if (volumeValue) volumeValue.textContent = appSettings.volume;
 if (positionSelect) positionSelect.value = appSettings.position;
 
+const userPseudoInput = document.getElementById('userPseudo');
+let myPseudo = localStorage.getItem('memescreen_pseudo') || '';
+if (userPseudoInput) userPseudoInput.value = myPseudo;
+
 ipcRenderer.send('update-settings', appSettings);
 
 if (durationSlider) durationSlider.addEventListener('input', (e) => durationValue.textContent = e.target.value);
@@ -148,13 +155,31 @@ if (volumeSlider) volumeSlider.addEventListener('input', (e) => volumeValue.text
 
 if (saveSettingsBtn) {
   saveSettingsBtn.addEventListener('click', () => {
-    appSettings.duration = parseInt(durationSlider.value, 10);
-    appSettings.scale = parseInt(scaleSlider.value, 10);
-    appSettings.volume = parseInt(volumeSlider.value, 10);
-    appSettings.position = positionSelect.value;
-    
+    appSettings = {
+      duration: parseInt(durationSlider.value, 10),
+      scale: parseInt(scaleSlider.value, 10),
+      volume: parseInt(volumeSlider.value, 10),
+      position: positionSelect.value
+    };
     localStorage.setItem('memescreen_settings', JSON.stringify(appSettings));
+    
+    if (userPseudoInput) {
+      myPseudo = userPseudoInput.value.trim();
+      localStorage.setItem('memescreen_pseudo', myPseudo);
+    }
+    
     ipcRenderer.send('update-settings', appSettings);
+    
+    const autoStart = document.getElementById('autoStartCheckbox').checked;
+    ipcRenderer.send('set-autostart', autoStart);
+    
+    const btn = saveSettingsBtn;
+    btn.textContent = 'Sauvegardé ✔️';
+    btn.style.background = '#10b981';
+    setTimeout(() => {
+      btn.textContent = 'Sauvegarder';
+      btn.style.background = '#6366f1';
+    }, 2000);
   });
 }
 
@@ -189,6 +214,7 @@ buttons.connect.addEventListener('click', () => {
   
   if (!token || !channelId) {
     texts.connStatus.textContent = "Veuillez remplir les deux champs.";
+    texts.connStatus.style.color = "#ef4444";
     return;
   }
   
@@ -205,16 +231,17 @@ ipcRenderer.on('discord-status', (event, response) => {
     localStorage.setItem('memescreen_token', inputs.token.value.trim());
     localStorage.setItem('memescreen_channel', inputs.channelId.value.trim());
     
-    navItems.main.disabled = false;
-    navItems.editor.disabled = false;
-    navItems.settings.disabled = false;
+    navItems.main.removeAttribute('disabled');
+    navItems.editor.removeAttribute('disabled');
+    navItems.troll.removeAttribute('disabled');
+    navItems.settings.removeAttribute('disabled');
     
     texts.botStatusDot.classList.add('online');
     texts.botStatusText.textContent = response.user;
     buttons.disconnect.style.display = 'block';
     
     texts.connStatus.textContent = "";
-    showView('editor');
+    showView('main');
   } else {
     texts.connStatus.textContent = response.error;
     texts.connStatus.style.color = "#ef4444";
@@ -333,6 +360,7 @@ function loadMediaFile(file) {
   currentMediaPath = file.path;
   memeTexts = [];
   selectedIndex = -1;
+  resetAudioState();
   updateEditorUI();
   navItems.editor.disabled = false;
   
@@ -547,6 +575,18 @@ if (clearSoundBtn) {
   });
 }
 
+function resetAudioState() {
+  const soundSelect = document.getElementById('soundSelect');
+  const selectedSoundName = document.getElementById('selectedSoundName');
+  const clearSoundBtn = document.getElementById('clearSoundBtn');
+  if (soundSelect) soundSelect.value = 'none';
+  if (selectedSoundName) {
+    selectedSoundName.textContent = 'Aucun';
+    selectedSoundName.style.color = '#10b981';
+  }
+  if (clearSoundBtn) clearSoundBtn.style.display = 'none';
+}
+
 // --- CANVAS EDITOR LOGIC ---
 
 const sendTtsBtn = document.getElementById('sendTtsBtn');
@@ -747,7 +787,8 @@ cancelMemeBtn.addEventListener('click', () => {
   currentMediaPath = null;
   currentImage = null;
   memeTexts = [];
-  memeVideo.pause();
+    resetAudioState();
+    memeVideo.pause();
   memeVideo.src = "";
   
   if (mediaWrapper) mediaWrapper.style.display = 'none';
@@ -788,14 +829,70 @@ function renderMacros() {
       <h4 style="margin-bottom: 5px; color: var(--primary);">${macro.name}</h4>
       <p style="font-size: 0.8rem; margin-bottom: 10px;">Raccourci: <kbd style="background:#333; padding:2px 5px; border-radius:3px;">${macro.shortcut || 'Aucun'}</kbd></p>
       <div style="display: flex; gap: 10px; margin-top: 10px;">
-        <button class="primary-btn btn-small" style="flex:1;" onclick="executeMacro('${macro.id}')">🚀 Envoyer</button>
-        <button class="btn-secondary btn-small" style="padding: 2px 8px;" title="Modifier le nom/raccourci" onclick="editMacro('${macro.id}')">✏️</button>
+        <button class="primary-btn btn-small" style="flex:1;" onclick="sendMacroDirectly('${macro.id}')">🚀 Envoyer</button>
+        <button class="btn-secondary btn-small" style="padding: 2px 8px;" title="Modifier le nom/raccourci" onclick="openEditMacroModal('${macro.id}')">✏️</button>
         <button class="btn-danger btn-small" style="padding: 2px 8px;" title="Supprimer" onclick="deleteMacro('${macro.id}')">🗑️</button>
       </div>
     `;
     favoritesList.appendChild(div);
   });
 }
+
+
+window.sendMacroDirectly = async (id) => {
+  const m = macros.find(m => m.id === id);
+  if (!m) return;
+  
+  const tempSound = m.soundPath;
+  
+  if (m.mediaType === 'image') {
+    const img = new Image();
+    img.src = "file://" + m.mediaPath;
+    await new Promise(r => { img.onload = r; img.onerror = r; });
+    
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = img.width || 800;
+    offCanvas.height = img.height || 600;
+    const oCtx = offCanvas.getContext('2d');
+    
+    oCtx.drawImage(img, 0, 0, offCanvas.width, offCanvas.height);
+    
+    m.texts.forEach(t => {
+      oCtx.font = `${t.size}px Impact`;
+      oCtx.fillStyle = t.color || 'white';
+      oCtx.textAlign = 'center';
+      oCtx.strokeStyle = 'black';
+      oCtx.lineWidth = t.size / 10;
+      oCtx.strokeText(t.text, t.x, t.y);
+      oCtx.fillText(t.text, t.x, t.y);
+    });
+    
+    offCanvas.toBlob(async (blob) => {
+      if (!blob) return;
+      const buffer = Buffer.from(await blob.arrayBuffer());
+      const tempPath = require('path').join(require('os').tmpdir(), `meme_${Date.now()}.png`);
+      require('fs').writeFileSync(tempPath, buffer);
+      
+      ipcRenderer.send('discord-upload', { 
+        filePath: tempPath, 
+        fileName: 'meme.png', 
+        sound: tempSound 
+      });
+    }, 'image/png');
+  } else if (m.mediaType === 'video') {
+    const vid = document.createElement('video');
+    vid.src = "file://" + m.mediaPath;
+    await new Promise(r => { vid.onloadedmetadata = r; vid.onerror = r; });
+    
+    ipcRenderer.send('process-video', {
+      inputPath: m.mediaPath,
+      texts: m.texts,
+      width: vid.videoWidth || 1280,
+      height: vid.videoHeight || 720,
+      sound: tempSound
+    });
+  }
+};
 
 window.deleteMacro = (id) => {
   macros = macros.filter(m => m.id !== id);
@@ -804,84 +901,169 @@ window.deleteMacro = (id) => {
   ipcRenderer.send('update-macros', macros);
 };
 
-window.editMacro = (id) => {
-  const m = macros.find(m => m.id === id);
-  if (!m) return;
+
+
+
+window.openEditMacroModal = async (id) => {
   editingMacroId = id;
+  const m = macros.find(mac => mac.id === id);
+  if (!m) return;
+  
+  const favNameInput = document.getElementById('favNameInput');
+  const favShortcutInput = document.getElementById('favShortcutInput');
+  const favModalTitle = document.getElementById('favModalTitle');
+  const favEditExtraFields = document.getElementById('favEditExtraFields');
+  const favSoundSelect = document.getElementById('favSoundSelect');
+  const favSelectedSoundName = document.getElementById('favSelectedSoundName');
+  const favClearSoundBtn = document.getElementById('favClearSoundBtn');
+  const favTextsContainer = document.getElementById('favTextsContainer');
+  const favoriteModal = document.getElementById('favoriteModal');
+  const duplicateFavBtn = document.getElementById('duplicateFavBtn');
+  
+  if (favModalTitle) favModalTitle.textContent = "✏️ Modifier le Favori";
+  if (favEditExtraFields) favEditExtraFields.style.display = 'block';
+  if (duplicateFavBtn) duplicateFavBtn.style.display = 'block';
+  
   favNameInput.value = m.name;
   favShortcutInput.value = m.shortcut || '';
-  favoriteModal.style.display = 'flex';
-};
-
-window.executeMacro = async (id) => {
-  const m = macros.find(m => m.id === id);
-  if (!m) return;
   
-  currentMediaType = m.mediaType;
-  currentMediaPath = m.mediaPath;
-  memeTexts = JSON.parse(JSON.stringify(m.texts));
-  if (soundSelect) {
-    soundSelect.value = m.soundPath;
-    if (selectedSoundName) {
-      selectedSoundName.textContent = m.soundPath !== 'none' ? path.basename(m.soundPath) : "Aucun";
-      selectedSoundName.style.color = '#10b981';
+  if (m.soundPath && m.soundPath !== 'none') {
+    favSoundSelect.value = m.soundPath;
+    favSelectedSoundName.textContent = require('path').basename(m.soundPath);
+    favSelectedSoundName.style.color = '#10b981';
+    if (favClearSoundBtn) favClearSoundBtn.style.display = 'inline-block';
+  } else {
+    favSoundSelect.value = 'none';
+    favSelectedSoundName.textContent = 'Aucun';
+    favSelectedSoundName.style.color = '#10b981';
+    if (favClearSoundBtn) favClearSoundBtn.style.display = 'none';
+  }
+  
+  favTextsContainer.innerHTML = '';
+  if (m.texts && m.texts.length > 0) {
+    m.texts.forEach((txt, index) => {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = txt.text;
+      input.className = 'fav-text-edit-input';
+      input.dataset.index = index;
+      input.style.width = '100%';
+      input.style.padding = '8px';
+      input.style.borderRadius = '5px';
+      input.style.border = '1px solid #334155';
+      input.style.background = '#0f172a';
+      input.style.color = 'white';
+      
+      const label = document.createElement('label');
+      label.textContent = `Texte ${index + 1} :`;
+      label.style.fontSize = '0.85em';
+      label.style.color = '#cbd5e1';
+      
+      const wrap = document.createElement('div');
+      wrap.appendChild(label);
+      wrap.appendChild(input);
+      favTextsContainer.appendChild(wrap);
+    });
+  } else {
+    favTextsContainer.innerHTML = '<p class="text-muted" style="font-size:0.9em;">Aucun texte associé.</p>';
+  }
+  
+  
+    if (favClearSoundBtn) {
+      favClearSoundBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        favSoundSelect.value = 'none';
+        if (favSelectedSoundName) {
+          favSelectedSoundName.textContent = 'Aucun';
+          favSelectedSoundName.style.color = '#10b981';
+        }
+        favClearSoundBtn.style.display = 'none';
+      };
     }
-  }
-  
-  showView('editor');
-  
-  // Activer l'onglet local
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-  const localTab = document.querySelector('.tab[data-tab="local"]');
-  const localTabContent = document.getElementById('tab-local');
-  if (localTab) localTab.classList.add('active');
-  if (localTabContent) localTabContent.classList.add('active');
-  
-  const mediaWrapper = document.getElementById('mediaWrapper');
-  const mediaPlaceholder = document.getElementById('mediaPlaceholder');
-  const propertiesArea = document.getElementById('propertiesArea');
-  const toolbarGroup = document.getElementById('toolbarGroup');
-  const sendControls = document.getElementById('sendControls');
-  
-  if (mediaWrapper) mediaWrapper.style.display = 'block';
-  if (mediaPlaceholder) mediaPlaceholder.style.display = 'none';
-  if (propertiesArea) propertiesArea.style.display = 'block';
-  if (toolbarGroup) toolbarGroup.style.display = 'flex';
-  if (sendControls) sendControls.style.display = 'block';
+    
+    const favSoundSearchBtn = document.getElementById('favSoundSearchBtn');
+    const favSoundSearchInput = document.getElementById('favSoundSearchInput');
+    const favSoundResults = document.getElementById('favSoundResults');
+    
+    if (favSoundSearchBtn) {
+      favSoundSearchBtn.onclick = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const q = favSoundSearchInput ? favSoundSearchInput.value.trim() : '';
+        if (!q) return;
+        if (favSoundResults) {
+          favSoundResults.innerHTML = '<p class="text-muted" style="text-align:center;">Recherche...</p>';
+          favSoundResults.style.display = 'block';
+        }
+        
+        try {
+          const response = await fetch(`https://www.myinstants.com/api/v1/instants/?name=${encodeURIComponent(q)}`);
+          const data = await response.json();
+          if (favSoundResults) favSoundResults.innerHTML = '';
+          
+          if (data.results && data.results.length > 0) {
+            data.results.forEach(instant => {
+              const div = document.createElement('div');
+              div.style.display = 'flex';
+              div.style.justifyContent = 'space-between';
+              div.style.alignItems = 'center';
+              div.style.padding = '5px';
+              div.style.borderBottom = '1px solid #334155';
+              
+              const name = document.createElement('span');
+              name.textContent = instant.name;
+              name.style.fontSize = '0.9em';
+              name.style.flex = '1';
+              
+              const btn = document.createElement('button');
+              btn.textContent = 'Choisir';
+              btn.className = 'btn-small primary-btn';
+              btn.style.padding = '2px 8px';
+              
+              btn.onclick = async (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                if (favSelectedSoundName) {
+                  favSelectedSoundName.textContent = "Téléchargement...";
+                  favSelectedSoundName.style.color = "#fbbf24";
+                }
+                if (favSoundResults) favSoundResults.style.display = 'none';
+                try {
+                  const soundRes = await fetch(instant.sound);
+                  const buffer = await soundRes.arrayBuffer();
+                  const tempPath = require('path').join(require('os').tmpdir(), `fav_sound_${Date.now()}.mp3`);
+                  require('fs').writeFileSync(tempPath, Buffer.from(buffer));
+                  if (favSoundSelect) favSoundSelect.value = tempPath;
+                  if (favSelectedSoundName) {
+                    favSelectedSoundName.textContent = instant.name;
+                    favSelectedSoundName.style.color = "#10b981";
+                  }
+                  if (favClearSoundBtn) favClearSoundBtn.style.display = 'inline-block';
+                } catch (err) {
+                  if (favSelectedSoundName) {
+                    favSelectedSoundName.textContent = "Erreur !";
+                    favSelectedSoundName.style.color = "#ef4444";
+                  }
+                }
+              };
+              
+              div.appendChild(name);
+              div.appendChild(btn);
+              if (favSoundResults) favSoundResults.appendChild(div);
+            });
+          } else {
+            if (favSoundResults) favSoundResults.innerHTML = '<p class="text-muted" style="text-align:center;">Aucun résultat</p>';
+          }
+        } catch (err) {
+          if (favSoundResults) favSoundResults.innerHTML = '<p style="color:#ef4444;text-align:center;">Erreur réseau</p>';
+        }
+      };
+    }
 
-  if (currentMediaType === 'image') {
-    const img = new Image();
-    img.src = "file://" + currentMediaPath;
-    await new Promise(r => {
-      img.onload = r;
-      img.onerror = r; // fallback
-    });
-    currentImage = img;
-    memeVideo.style.display = 'none';
-    memeImagePreview.style.display = 'block';
-    memeImagePreview.src = img.src;
-    memeCanvas.width = img.width || 800;
-    memeCanvas.height = img.height || 600;
-  } else if (currentMediaType === 'video') {
-    memeImagePreview.style.display = 'none';
-    memeVideo.style.display = 'block';
-    memeVideo.src = "file://" + currentMediaPath;
-    await new Promise(r => {
-      memeVideo.onloadedmetadata = r;
-      memeVideo.onerror = r;
-    });
-    memeCanvas.width = memeVideo.videoWidth || 800;
-    memeCanvas.height = memeVideo.videoHeight || 600;
-  }
-  
-  updateEditorUI();
-  drawMeme();
-  
-  setTimeout(() => {
-    sendMemeBtn.click();
-  }, 100);
+    favoriteModal.style.display = 'flex';
 };
+
 
 const favoriteModal = document.getElementById('favoriteModal');
 const favNameInput = document.getElementById('favNameInput');
@@ -893,6 +1075,13 @@ if (favoriteMemeBtn) {
   favoriteMemeBtn.addEventListener('click', () => {
     if (!currentMediaPath) return;
     editingMacroId = null;
+    const favModalTitle = document.getElementById('favModalTitle');
+    const favEditExtraFields = document.getElementById('favEditExtraFields');
+    const duplicateFavBtn = document.getElementById('duplicateFavBtn');
+    if (favModalTitle) favModalTitle.textContent = "⭐ Ajouter aux Favoris";
+    if (favEditExtraFields) favEditExtraFields.style.display = 'none';
+    if (duplicateFavBtn) duplicateFavBtn.style.display = 'none';
+    
     favNameInput.value = '';
     favShortcutInput.value = '';
     favoriteModal.style.display = 'flex';
@@ -906,25 +1095,120 @@ if (cancelFavBtn) {
 }
 
 if (saveFavBtn) {
+  
+  const duplicateFavBtn = document.getElementById('duplicateFavBtn');
+  if (duplicateFavBtn) {
+    duplicateFavBtn.addEventListener('click', () => {
+      const name = favNameInput.value.trim();
+      if (!name) return;
+      const shortcut = favShortcutInput.value.trim();
+      
+      favoriteModal.style.display = 'none';
+      
+      if (editingMacroId) {
+        const original = macros.find(m => m.id === editingMacroId);
+        if (original) {
+          const finalName = (name === original.name) ? name + " (Copie)" : name;
+          
+          const favSoundSelect = document.getElementById('favSoundSelect');
+          let soundPath = favSoundSelect ? favSoundSelect.value : 'none';
+          if (soundPath !== 'none') {
+            if (require('path').isAbsolute(soundPath) || soundPath.includes('tmp')) {
+              const ext = require('path').extname(soundPath);
+              const newSoundPath = require('path').join(favoritesDir, `sound_${Date.now()}${ext}`);
+              try {
+                require('fs').copyFileSync(soundPath, newSoundPath);
+                soundPath = newSoundPath;
+              } catch(e) { console.error("Erreur copie son", e); }
+            } else {
+              // It's already in favoritesDir, but we are duplicating, so let's copy it again to avoid linking issues
+              const ext = require('path').extname(soundPath);
+              const newSoundPath = require('path').join(favoritesDir, `sound_${Date.now()}${ext}`);
+              try {
+                require('fs').copyFileSync(soundPath, newSoundPath);
+                soundPath = newSoundPath;
+              } catch(e) { console.error("Erreur copie son original", e); }
+            }
+          }
+          
+          let newTexts = JSON.parse(JSON.stringify(original.texts || []));
+          const textInputs = document.querySelectorAll('.fav-text-edit-input');
+          textInputs.forEach(input => {
+             const idx = parseInt(input.dataset.index, 10);
+             if (newTexts[idx]) {
+               newTexts[idx].text = input.value;
+             }
+          });
+          
+          let newMediaPath = original.mediaPath;
+          if (original.mediaPath) {
+             const ext = require('path').extname(original.mediaPath);
+             newMediaPath = require('path').join(favoritesDir, `media_${Date.now()}${ext}`);
+             try {
+               require('fs').copyFileSync(original.mediaPath, newMediaPath);
+             } catch(e) { console.error("Erreur copie media", e); }
+          }
+          
+          const newMacro = {
+            id: Date.now().toString(),
+            name: finalName,
+            shortcut: shortcut || null,
+            mediaType: original.mediaType,
+            mediaPath: newMediaPath,
+            texts: newTexts,
+            soundPath: soundPath
+          };
+          
+          macros.push(newMacro);
+          localStorage.setItem('memescreen_macros', JSON.stringify(macros));
+          renderMacros();
+          const { ipcRenderer } = require('electron');
+          ipcRenderer.send('update-macros', macros);
+        }
+        editingMacroId = null;
+      }
+    });
+  }
+
   saveFavBtn.addEventListener('click', () => {
     const name = favNameInput.value.trim();
     if (!name) return;
     const shortcut = favShortcutInput.value.trim();
     
     favoriteModal.style.display = 'none';
-    
-    if (editingMacroId) {
-      const m = macros.find(m => m.id === editingMacroId);
-      if (m) {
-        m.name = name;
-        m.shortcut = shortcut || null;
-        localStorage.setItem('memescreen_macros', JSON.stringify(macros));
-        renderMacros();
-        ipcRenderer.send('update-macros', macros);
+        if (editingMacroId) {
+        const m = macros.find(m => m.id === editingMacroId);
+        if (m) {
+          m.name = name;
+          m.shortcut = shortcut || null;
+          
+          const favSoundSelect = document.getElementById('favSoundSelect');
+          let soundPath = favSoundSelect ? favSoundSelect.value : 'none';
+          if (soundPath !== 'none' && soundPath !== m.soundPath) {
+            const ext = path.extname(soundPath);
+            const newSoundPath = path.join(favoritesDir, `sound_${Date.now()}${ext}`);
+            try {
+              fs.copyFileSync(soundPath, newSoundPath);
+              soundPath = newSoundPath;
+            } catch(e) { console.error("Erreur copie son favori", e); }
+          }
+          m.soundPath = soundPath;
+          
+          const textInputs = document.querySelectorAll('.fav-text-edit-input');
+          textInputs.forEach(input => {
+             const idx = parseInt(input.dataset.index, 10);
+             if (m.texts && m.texts[idx]) {
+               m.texts[idx].text = input.value;
+             }
+          });
+          
+          localStorage.setItem('memescreen_macros', JSON.stringify(macros));
+          renderMacros();
+          ipcRenderer.send('update-macros', macros);
+        }
+        editingMacroId = null;
+        return;
       }
-      editingMacroId = null;
-      return;
-    }
     
     let mediaPath = currentMediaPath;
     if (mediaPath) {
@@ -964,8 +1248,8 @@ if (saveFavBtn) {
 }
 
 ipcRenderer.on('trigger-macro-shortcut', (event, id) => {
-  executeMacro(id);
-});
+    sendMacroDirectly(id);
+  });
 
 // Initialize macros
 renderMacros();
@@ -1031,4 +1315,110 @@ ipcRenderer.on('upload-status', (event, response) => {
   }
   
   setTimeout(() => { texts.uploadStatus.textContent = ""; }, 4000);
+});
+
+// --- TROLL SYSTEM LOGIC ---
+const launchTrollBtn = document.getElementById('launchTrollBtn');
+const trollTargetInput = document.getElementById('trollTargetInput');
+const trollLaunchStatus = document.getElementById('trollLaunchStatus');
+
+const trollVoteOverlay = document.getElementById('trollVoteOverlay');
+const trollVoteTarget = document.getElementById('trollVoteTarget');
+const trollTimerBar = document.getElementById('trollTimerBar');
+const trollTimeLeft = document.getElementById('trollTimeLeft');
+const trollVoteBtns = document.querySelectorAll('.troll-vote-btn');
+
+let trollVoteInterval = null;
+
+if (launchTrollBtn) {
+  launchTrollBtn.addEventListener('click', () => {
+    const target = trollTargetInput.value.trim();
+    if (!target) {
+      trollLaunchStatus.textContent = '❌ Tape un pseudo !';
+      trollLaunchStatus.style.color = '#ef4444';
+      return;
+    }
+    
+    trollLaunchStatus.textContent = 'Lancement en cours...';
+    trollLaunchStatus.style.color = '#eab308';
+    
+    ipcRenderer.send('launch-troll-vote', { target });
+    setTimeout(() => { trollLaunchStatus.textContent = ''; }, 3000);
+  });
+}
+
+ipcRenderer.on('troll-vote-started', (event, { target, duration, options }) => {
+  trollVoteTarget.textContent = target;
+  trollVoteOverlay.style.display = 'flex';
+  
+  trollVoteBtns.forEach(btn => {
+    btn.style.borderColor = '#334155';
+    btn.style.boxShadow = 'none';
+    btn.querySelector('.vote-count').textContent = '0';
+    
+    // Update button text with random troll option if provided
+    if (options) {
+      const voteIndex = parseInt(btn.getAttribute('data-vote')) - 1;
+      if (options[voteIndex]) {
+        btn.querySelector('strong').textContent = options[voteIndex].name;
+      }
+    }
+  });
+  
+  trollTimerBar.style.width = '100%';
+  trollTimerBar.style.transition = 'none';
+  setTimeout(() => {
+    trollTimerBar.style.transition = `width ${duration}s linear`;
+    trollTimerBar.style.width = '0%';
+  }, 100);
+  
+  let timeLeft = duration;
+  trollTimeLeft.textContent = timeLeft;
+  
+  if (trollVoteInterval) clearInterval(trollVoteInterval);
+  trollVoteInterval = setInterval(() => {
+    timeLeft--;
+    trollTimeLeft.textContent = timeLeft;
+    if (timeLeft <= 0) clearInterval(trollVoteInterval);
+  }, 1000);
+});
+
+trollVoteBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const vote = btn.getAttribute('data-vote');
+    ipcRenderer.send('send-troll-vote', { vote, myPseudo });
+    
+    trollVoteBtns.forEach(b => {
+      b.style.borderColor = '#334155';
+      b.style.boxShadow = 'none';
+    });
+    btn.style.borderColor = '#eab308';
+    btn.style.boxShadow = '0 0 15px rgba(234, 179, 8, 0.5)';
+  });
+});
+
+ipcRenderer.on('troll-vote-update', (event, { votes }) => {
+  trollVoteBtns.forEach(btn => {
+    const voteKey = btn.getAttribute('data-vote');
+    btn.querySelector('.vote-count').textContent = votes[voteKey] || '0';
+  });
+});
+
+ipcRenderer.on('troll-vote-ended', (event, { winner, target }) => {
+  if (trollVoteInterval) clearInterval(trollVoteInterval);
+  trollTimeLeft.textContent = '0';
+  
+  trollVoteBtns.forEach(btn => {
+    if (btn.getAttribute('data-vote') === winner) {
+      btn.style.borderColor = '#10b981';
+      btn.style.boxShadow = '0 0 30px rgba(16, 185, 129, 0.8)';
+    } else {
+      btn.style.opacity = '0.5';
+    }
+  });
+  
+  setTimeout(() => {
+    trollVoteOverlay.style.display = 'none';
+    trollVoteBtns.forEach(btn => btn.style.opacity = '1');
+  }, 4000);
 });

@@ -34,8 +34,8 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 900,
-    minWidth: 1000,
-    minHeight: 700,
+    minWidth: 400,
+    minHeight: 500,
     backgroundColor: '#000000',
     show: false,
     frame: false,
@@ -51,6 +51,7 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => {
     if (process.argv.includes('--hidden')) {
       if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close();
+      mainWindow.webContents.executeJavaScript('document.body.classList.add("app-ready")');
       return; // Démarrage invisible
     }
     
@@ -65,6 +66,13 @@ function createWindow() {
       // On déclenche l'animation d'entrée de l'interface
       mainWindow.webContents.executeJavaScript('document.body.classList.add("app-ready")');
     }, 100);
+  });
+
+  // Si on fait un Ctrl+R (reload), le splash est déjà fermé
+  mainWindow.webContents.on('did-finish-load', () => {
+    if (!splashWindow || splashWindow.isDestroyed()) {
+      mainWindow.webContents.executeJavaScript('document.body.classList.add("app-ready")');
+    }
   });
   
   // Intercepter la fermeture de la fenêtre pour la mettre en arrière-plan
@@ -253,7 +261,12 @@ ipcMain.on('discord-login', async (event, { token, channelId }) => {
   }
 
   discordClient = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
+    intents: [
+      GatewayIntentBits.Guilds, 
+      GatewayIntentBits.GuildMessages, 
+      GatewayIntentBits.MessageContent,
+      GatewayIntentBits.GuildMessageReactions
+    ]
   });
 
   discordClient.once(Events.ClientReady, c => {
@@ -280,9 +293,54 @@ ipcMain.on('discord-login', async (event, { token, channelId }) => {
             soundUrl: audioAttach ? audioAttach.url : null
           });
         }
+      }
+      
+      // Intercept Troll Voting messages to avoid reading the full text via TTS
+      if (message.content.includes('VOTE TROLL LANCE CONTRE')) {
+        if (overlayWindow) overlayWindow.webContents.send('new-text', { text: "Le vote du troll est ouvert." });
+        return;
+      }
+      if (message.content.includes('LE VOTE EST TERMINE')) {
+        if (overlayWindow) overlayWindow.webContents.send('new-text', { text: "Le vote du troll est terminé." });
+        return;
+      }
+      
+      // Hidden Message: In-App Vote
+      if (message.content.startsWith('[MemeScreenVote]')) {
+        // Do not read this via TTS, just process it below
       } else if (message.content) {
         if (overlayWindow) {
           overlayWindow.webContents.send('new-text', { text: message.content });
+        }
+      }
+      
+      // Process Hidden Message: In-App Vote
+      if (message.content.startsWith('[MemeScreenVote]')) {
+        const parts = message.content.split(' ');
+        if (parts.length >= 4) {
+          const voteTarget = parts[1];
+          const choice = parts[2];
+          const pseudo = parts[3];
+          
+          if (activeTrollVote && activeTrollVote.target === voteTarget) {
+            if (!activeTrollVote.voters.has(pseudo)) {
+              activeTrollVote.voters.add(pseudo);
+              if (!activeTrollVote.votes[choice]) activeTrollVote.votes[choice] = 0;
+              activeTrollVote.votes[choice]++;
+              broadcastTrollUpdate();
+            }
+          }
+        }
+        // Delete the hidden message to not spam
+        try { message.delete().catch(()=>{}).then(); } catch(e){}
+        return;
+      }
+      
+      // Discord Command: !troll target
+      if (message.content.startsWith('!troll ')) {
+        const target = message.content.substring(7).trim();
+        if (target) {
+          startTrollVote(target);
         }
       }
     }
@@ -475,4 +533,131 @@ ipcMain.on('process-video', async (event, { inputPath, texts, width, height, sou
     .on('error', (err) => {
       event.reply('upload-status', { success: false, error: err.message });
     });
+});
+
+// --- TROLL LOGIC ---
+const ALL_TROLLS = [
+  { id: 'flashbang', name: 'Flashbang 💣' },
+  { id: 'bsod', name: 'Faux BSOD 💻' },
+  { id: 'dvd', name: 'Bouncing DVD 📀' },
+  { id: 'update', name: 'Fausse MAJ Windows 🔄' },
+  { id: 'crack', name: 'Écran Fissuré 🔨' },
+  { id: 'discord-call', name: 'Appel Discord 📞' },
+  { id: 'fly', name: 'La Mouche 🪰' },
+  { id: 'matrix', name: 'Matrix Rain 👨‍💻' },
+  { id: 'hacker', name: 'Hacking CMD 💻' },
+  { id: 'notif', name: 'Notification Spam 🔔' }
+];
+
+let activeTrollVote = null;
+
+function broadcastTrollUpdate() {
+  if (!activeTrollVote) return;
+  const windows = require('electron').BrowserWindow.getAllWindows();
+  windows.forEach(w => {
+    try { w.webContents.send('troll-vote-update', { votes: activeTrollVote.votes }); } catch(e){}
+  });
+}
+
+function startTrollVote(target) {
+  if (activeTrollVote) return;
+  if (!discordClient || !discordClient.targetChannelId) return;
+  
+  // Pick 4 random trolls
+  const shuffled = [...ALL_TROLLS].sort(() => 0.5 - Math.random());
+  const selectedTrolls = shuffled.slice(0, 4);
+  
+  activeTrollVote = {
+    target,
+    votes: { '1': 0, '2': 0, '3': 0, '4': 0 },
+    options: selectedTrolls,
+    voters: new Set(),
+    endTime: Date.now() + 15000,
+    messageId: null
+  };
+  
+  const windows = require('electron').BrowserWindow.getAllWindows();
+  windows.forEach(w => {
+    try { w.webContents.send('troll-vote-started', { target, duration: 15, options: selectedTrolls }); } catch(e){}
+  });
+  
+  discordClient.channels.fetch(discordClient.targetChannelId).then(channel => {
+    if (!channel) return;
+    
+    let msgText = '🚨 **VOTE TROLL LANCE CONTRE `' + target + '` !** 🚨\n\n';
+    msgText += '1️⃣ ' + selectedTrolls[0].name + '\n';
+    msgText += '2️⃣ ' + selectedTrolls[1].name + '\n';
+    msgText += '3️⃣ ' + selectedTrolls[2].name + '\n';
+    msgText += '4️⃣ ' + selectedTrolls[3].name + '\n\n';
+    msgText += '*Le vote se termine dans 15 secondes. Réagissez pour voter !*';
+    
+    channel.send(msgText).then(async msg => {
+      activeTrollVote.messageId = msg.id;
+      try {
+        await msg.react('1️⃣');
+        await msg.react('2️⃣');
+        await msg.react('3️⃣');
+        await msg.react('4️⃣');
+      } catch(e){}
+      
+      const filter = (reaction, user) => !user.bot && ['1️⃣', '2️⃣', '3️⃣', '4️⃣'].includes(reaction.emoji.name);
+      const collector = msg.createReactionCollector({ filter, time: 15000 });
+      
+      collector.on('collect', (reaction, user) => {
+        if (!activeTrollVote) return;
+        const choice = { '1️⃣': '1', '2️⃣': '2', '3️⃣': '3', '4️⃣': '4' }[reaction.emoji.name];
+        if (!activeTrollVote.voters.has(user.id)) {
+          activeTrollVote.voters.add(user.id);
+          activeTrollVote.votes[choice]++;
+          broadcastTrollUpdate();
+        }
+      });
+      
+      collector.on('end', () => endTrollVote(msg));
+    });
+  });
+}
+
+function endTrollVote(msg) {
+  if (!activeTrollVote) return;
+  
+  let winnerChoice = '1';
+  let maxVotes = -1;
+  for (let i = 1; i <= 4; i++) {
+    if (activeTrollVote.votes[i.toString()] > maxVotes) {
+      maxVotes = activeTrollVote.votes[i.toString()];
+      winnerChoice = i.toString();
+    }
+  }
+  
+  const target = activeTrollVote.target;
+  const winningTroll = activeTrollVote.options[parseInt(winnerChoice) - 1];
+  activeTrollVote = null;
+  
+  if (msg) {
+    msg.edit('🚨 **LE VOTE EST TERMINE !** 🚨\nLe vainqueur est : **' + winningTroll.name + '** ! Execution en cours sur le PC de ' + target + '...');
+  }
+  
+  const windows = require('electron').BrowserWindow.getAllWindows();
+  windows.forEach(w => {
+    try { w.webContents.send('troll-vote-ended', { winner: winnerChoice, target }); } catch(e){}
+  });
+  
+  if (overlayWindow) {
+    overlayWindow.webContents.send('execute-troll', { type: winningTroll.id, target });
+  }
+}
+
+ipcMain.on('launch-troll-vote', (event, { target }) => startTrollVote(target));
+
+ipcMain.on('send-troll-vote', async (event, { vote, myPseudo }) => {
+  if (!activeTrollVote) return;
+  if (discordClient && discordClient.targetChannelId) {
+    try {
+      const channel = await discordClient.channels.fetch(discordClient.targetChannelId);
+      if (channel) {
+        channel.send('[MemeScreenVote] ' + activeTrollVote.target + ' ' + vote + ' ' + (myPseudo || 'Anonyme_' + Date.now()));
+      }
+    } catch(e){}
+  }
 });

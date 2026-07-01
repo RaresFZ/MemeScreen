@@ -29,6 +29,7 @@
         <button id="nav-login" class="nav-item active">🔌 Connexion</button>
         <button id="nav-main" class="nav-item" disabled>🏠 Accueil</button>
         <button id="nav-editor" class="nav-item" disabled>🎨 Éditeur</button>
+        <button id="nav-troll" class="nav-item" disabled>🎭 Troll</button>
         <button id="nav-settings" class="nav-item" disabled>⚙️ Paramètres</button>
       </nav>
 
@@ -200,7 +201,10 @@
           <h1>Paramètres ⚙️</h1>
           <div class="settings-grid">
             <div class="input-group" style="grid-column: 1 / -1; margin-bottom: 10px;">
-              <h3 style="margin-top:0;">Système 💻</h3>
+              <h3 style="margin-top:0;">Système & Multijoueur 💻</h3>
+              <label>Ton Pseudo (pour être ciblé par les Trolls)</label>
+              <input type="text" id="userPseudo" placeholder="Ex: RaresFZ" style="margin-bottom: 15px; padding: 10px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 5px; width: 100%; box-sizing: border-box;" />
+              
               <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
                 <input type="checkbox" id="autoStartCheckbox" style="width:auto;">
                 Lancer MemeScreen au démarrage de Windows (en arrière-plan)
@@ -236,6 +240,56 @@
 
     </main>
 
+    <!-- TROLL SCREEN -->
+    <section id="trollScreen" class="view">
+      <div class="card">
+        <h1 style="color: #ef4444; margin-bottom: 10px;">ZONE DE TROLL 🎭</h1>
+        <p class="text-muted" style="margin-bottom: 25px;">Lance un vote infernal contre tes amis !</p>
+        
+        <div class="input-group" style="text-align: left;">
+          <label style="color: #cbd5e1; font-weight: bold; font-size: 1.1rem;">Pseudo de la Victime :</label>
+          <input type="text" id="trollTargetInput" placeholder="Tape le pseudo exact..." style="padding: 15px; background: #0f172a; border: 2px solid #ef4444; color: white; border-radius: 8px; width: 100%; box-sizing: border-box; font-size: 1.2rem; margin-top: 5px;" />
+        </div>
+        
+        <button id="launchTrollBtn" class="primary-btn btn-lg w-100" style="background: #ef4444; margin-top: 25px; font-size: 1.2rem; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">🚨 Lancer le Vote ! 🚨</button>
+        <p id="trollLaunchStatus" class="status-message mt-3"></p>
+      </div>
+    </section>
+
+    <!-- TROLL VOTE OVERLAY (IN-APP) -->
+    <div id="trollVoteOverlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 9999; backdrop-filter: blur(10px); flex-direction: column; align-items: center; justify-content: center;">
+      <h1 style="color: #ef4444; font-size: 2.5rem; text-transform: uppercase; animation: pulse 1s infinite;">🚨 VOTE TROLL EN COURS 🚨</h1>
+      <h2 style="color: white; margin-bottom: 30px;">Cible : <span id="trollVoteTarget" style="color: #eab308; font-weight: 800;"></span></h2>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 80%; max-width: 700px; margin-bottom: 30px;">
+        <button class="troll-vote-btn" data-vote="1" style="background: #1e293b; border: 2px solid #334155; padding: 20px; border-radius: 10px; color: white; font-size: 1.2rem; cursor: pointer; transition: 0.2s;">
+          <div style="font-size: 2rem; margin-bottom: 10px;">1️⃣</div>
+          <strong>Flashbang</strong>
+          <div class="vote-count" style="margin-top: 10px; font-size: 1.5rem; color: #eab308; font-weight: bold;">0</div>
+        </button>
+        <button class="troll-vote-btn" data-vote="2" style="background: #1e293b; border: 2px solid #334155; padding: 20px; border-radius: 10px; color: white; font-size: 1.2rem; cursor: pointer; transition: 0.2s;">
+          <div style="font-size: 2rem; margin-bottom: 10px;">2️⃣</div>
+          <strong>Faux BSOD</strong>
+          <div class="vote-count" style="margin-top: 10px; font-size: 1.5rem; color: #eab308; font-weight: bold;">0</div>
+        </button>
+        <button class="troll-vote-btn" data-vote="3" style="background: #1e293b; border: 2px solid #334155; padding: 20px; border-radius: 10px; color: white; font-size: 1.2rem; cursor: pointer; transition: 0.2s;">
+          <div style="font-size: 2rem; margin-bottom: 10px;">3️⃣</div>
+          <strong>Bouncing DVD</strong>
+          <div class="vote-count" style="margin-top: 10px; font-size: 1.5rem; color: #eab308; font-weight: bold;">0</div>
+        </button>
+        <button class="troll-vote-btn" data-vote="4" style="background: #1e293b; border: 2px solid #334155; padding: 20px; border-radius: 10px; color: white; font-size: 1.2rem; cursor: pointer; transition: 0.2s;">
+          <div style="font-size: 2rem; margin-bottom: 10px;">4️⃣</div>
+          <strong>Screamer</strong>
+          <div class="vote-count" style="margin-top: 10px; font-size: 1.5rem; color: #eab308; font-weight: bold;">0</div>
+        </button>
+      </div>
+      
+      <div style="width: 80%; max-width: 700px; height: 20px; background: #1e293b; border-radius: 10px; overflow: hidden; border: 2px solid #334155;">
+        <div id="trollTimerBar" style="width: 100%; height: 100%; background: #eab308; transition: width 1s linear;"></div>
+      </div>
+      <p style="color: #94a3b8; margin-top: 10px; font-size: 1.2rem;">Temps restant : <span id="trollTimeLeft">15</span>s</p>
+    </div>
+
     <!-- RIGHT DECORATIVE HUD -->
     <aside class="right-hud">
       <div class="hud-box">
@@ -264,24 +318,51 @@
 
     <!-- Modal Favori -->
     <div id="favoriteModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
-      <div class="card" style="margin-top: 0; width: 450px; max-width: 90%;">
-        <h3>⭐ Ajouter aux Favoris</h3>
-        <div class="input-group mt-4">
-          <label>Nom du favori :</label>
-          <input type="text" id="favNameInput" placeholder="Ex: Mon Super Meme">
-        </div>
-        <div class="input-group">
-          <label>Raccourci Clavier Global (Optionnel) :</label>
-          <input type="text" id="favShortcutInput" placeholder="Ex: CommandOrControl+Alt+1">
-          <p class="text-muted" style="font-size: 0.8em; margin-top: 5px;">Tu pourras déclencher ce mème même si l'application est réduite en arrière-plan.</p>
-        </div>
-        <div style="display:flex; gap:10px; margin-top:25px;">
-          <button id="cancelFavBtn" class="btn-secondary" style="flex:1;">Annuler</button>
-          <button id="saveFavBtn" class="primary-btn" style="flex:1;">Sauvegarder</button>
+              <div class="card" style="margin-top: 0; width: 500px; max-width: 95%; max-height: 90vh; overflow-y: auto;">
+          <h3 id="favModalTitle">⭐ Ajouter aux Favoris</h3>
+          <div class="input-group mt-4">
+            <label>Nom du favori :</label>
+            <input type="text" id="favNameInput" placeholder="Ex: Mon Super Meme">
+          </div>
+          <div class="input-group">
+            <label>Raccourci Clavier Global (Optionnel) :</label>
+            <input type="text" id="favShortcutInput" placeholder="Ex: CommandOrControl+Alt+1">
+            <p class="text-muted" style="font-size: 0.8em; margin-top: 5px;">Tu pourras déclencher ce mème même si l'application est réduite en arrière-plan.</p>
+          </div>
+          
+          <div id="favEditExtraFields" style="display: none;">
+            <hr style="border:1px solid #334155; margin: 15px 0;">
+            
+            <div class="input-group">
+              <label>Son MyInstants :</label>
+              <div style="display:flex; gap:10px; margin-bottom: 5px;">
+                <input type="text" id="favSoundSearchInput" placeholder="Rechercher un son...">
+                <button id="favSoundSearchBtn" class="primary-btn" style="padding: 8px 15px; width:auto; font-size:1rem;">Chercher</button>
+              </div>
+              <div id="favSoundResults" style="display:none; max-height: 100px; overflow-y: auto; background: #0f172a; border: 1px solid #334155; border-radius: 5px; padding: 5px; margin-bottom: 10px;"></div>
+              <p style="font-size: 0.9em; margin-top: 5px;">Son actuel : <strong id="favSelectedSoundName" style="color: #10b981; word-break: break-word;">Aucun</strong></p>
+              <input type="hidden" id="favSoundSelect" value="none">
+              <button id="favClearSoundBtn" class="btn-small btn-danger" style="margin-top: 5px; display: none;">Retirer le son</button>
+            </div>
+            
+            <hr style="border:1px solid #334155; margin: 15px 0;">
+            
+            <div class="input-group">
+              <label>Textes du mème :</label>
+              <div id="favTextsContainer" style="display:flex; flex-direction:column; gap:10px;">
+                <!-- Text inputs will be injected here -->
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:10px; margin-top:25px;">
+            <button id="cancelFavBtn" class="btn-secondary" style="flex:1;">Annuler</button>
+            <button id="duplicateFavBtn" class="primary-btn" style="flex:1; display:none; background:#fbbf24; color:#0f172a;">Dupliquer</button>
+            <button id="saveFavBtn" class="primary-btn" style="flex:1;">Sauvegarder</button>
+          </div>
         </div>
       </div>
-    </div>
-
-  <script src="renderer.js"></script>
+  
+    <script src="renderer.js"></script>
 </body>
 </html>

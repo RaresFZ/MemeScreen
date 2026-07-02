@@ -318,7 +318,7 @@
 
     <!-- Modal Favori -->
     <div id="favoriteModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
-              <div class="card" style="margin-top: 0; width: 500px; max-width: 95%; max-height: 90vh; overflow-y: auto;">
+        <div class="card" style="margin-top: 0; max-width: 95%; max-height: 95vh; overflow: hidden;">
           <h3 id="favModalTitle">⭐ Ajouter aux Favoris</h3>
           <div class="input-group mt-4">
             <label>Nom du favori :</label>
@@ -339,6 +339,15 @@
                 <input type="text" id="favSoundSearchInput" placeholder="Rechercher un son...">
                 <button id="favSoundSearchBtn" class="primary-btn" style="padding: 8px 15px; width:auto; font-size:1rem;">Chercher</button>
               </div>
+
+              <div id="favPreviewControls" style="display:none; align-items: center; justify-content: space-between; margin-bottom: 10px; background: #0f172a; padding: 5px 10px; border-radius: 5px; border: 1px solid #334155;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <label style="font-size: 0.8rem; margin: 0; color: #94a3b8;">Vol 🔊</label>
+                    <input type="range" id="favPreviewVolume" min="0" max="1" step="0.05" value="0.5" style="width: 80px;">
+                  </div>
+                  <button id="favStopPreviewBtn" class="btn-small btn-danger" style="display:none; padding: 2px 10px;">⏹ Arrêter</button>
+                </div>
+
               <div id="favSoundResults" style="display:none; max-height: 100px; overflow-y: auto; background: #0f172a; border: 1px solid #334155; border-radius: 5px; padding: 5px; margin-bottom: 10px;"></div>
               <p style="font-size: 0.9em; margin-top: 5px;">Son actuel : <strong id="favSelectedSoundName" style="color: #10b981; word-break: break-word;">Aucun</strong></p>
               <input type="hidden" id="favSoundSelect" value="none">
@@ -355,7 +364,7 @@
             </div>
           </div>
 
-          <div style="display:flex; gap:10px; margin-top:25px;">
+          <div class="buttons-row">
             <button id="cancelFavBtn" class="btn-secondary" style="flex:1;">Annuler</button>
             <button id="duplicateFavBtn" class="primary-btn" style="flex:1; display:none; background:#fbbf24; color:#0f172a;">Dupliquer</button>
             <button id="saveFavBtn" class="primary-btn" style="flex:1;">Sauvegarder</button>

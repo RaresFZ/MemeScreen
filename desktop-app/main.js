@@ -229,17 +229,36 @@ if (!gotTheLock) {
 }
 
 // Auto Updater events
+let updateWindow = null;
+
 autoUpdater.on('update-downloaded', (info) => {
-  dialog.showMessageBox({
-    type: 'info',
-    title: 'Mise à jour disponible 🚀',
-    message: 'Une nouvelle version a été téléchargée ! L\'application va redémarrer pour l\'installer.',
-    buttons: ['Redémarrer maintenant', 'Plus tard']
-  }).then((result) => {
-    if (result.response === 0) {
-      autoUpdater.quitAndInstall();
+  if (updateWindow) return;
+  updateWindow = new BrowserWindow({
+    width: 450,
+    height: 300,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
     }
   });
+  updateWindow.loadFile('update.html');
+  updateWindow.on('closed', () => {
+    updateWindow = null;
+  });
+});
+
+ipcMain.on('update-restart', () => {
+  autoUpdater.quitAndInstall();
+});
+
+ipcMain.on('update-later', () => {
+  if (updateWindow) {
+    updateWindow.close();
+  }
 });
 
 app.on('before-quit', () => {

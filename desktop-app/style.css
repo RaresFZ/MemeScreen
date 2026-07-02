@@ -679,3 +679,49 @@ input[type="range"]::-webkit-slider-thumb {
   }
 }
 
+
+
+/* --- FAVORITE MODAL RESPONSIVE FIXES --- */
+#favoriteModal .card {
+  width: 650px;
+  max-width: 95vw;
+  padding: 20px;
+}
+#favoriteModal h3 {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+}
+#favoriteModal label {
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+  display: block;
+}
+#favoriteModal input[type="text"] {
+  padding: 10px;
+  font-size: 1rem;
+  border-width: 2px;
+  box-shadow: 4px 4px 0px var(--primary);
+}
+#favoriteModal button {
+  padding: 10px 15px;
+  font-size: 1rem;
+  border-width: 2px;
+  box-shadow: 4px 4px 0px var(--primary);
+}
+#favoriteModal .btn-small {
+  padding: 5px 10px;
+  font-size: 0.8rem;
+}
+#favoriteModal hr {
+  margin: 15px 0;
+}
+#favoriteModal .buttons-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+#favoriteModal .buttons-row button {
+  flex: 1;
+  min-width: 140px;
+}

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Mise à jour</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: transparent;
+      user-select: none;
+    }
+    .update-box {
+      background: var(--panel-bg);
+      border: var(--border);
+      padding: 30px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      width: 90%;
+      position: relative;
+    }
+    .update-box h1 {
+      color: var(--primary);
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      text-shadow: var(--shadow-neon);
+      font-weight: 900;
+    }
+    .update-box p {
+      color: var(--text-main);
+      font-size: 1rem;
+      margin-bottom: 25px;
+      line-height: 1.4;
+      font-weight: bold;
+    }
+    .buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+    }
+    .drag-region {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 30px;
+      -webkit-app-region: drag;
+    }
+  </style>
+</head>
+<body>
+  <div class="drag-region"></div>
+  <div class="update-box">
+    <h1>🚀 Mise à jour prête !</h1>
+    <p>Une nouvelle version de MemeScreen vient d'être téléchargée.<br>Veux-tu redémarrer maintenant ?</p>
+    <div class="buttons">
+      <button id="laterBtn" class="btn-secondary" style="-webkit-app-region: no-drag;">Plus tard</button>
+      <button id="restartBtn" class="primary-btn" style="-webkit-app-region: no-drag;">Redémarrer</button>
+    </div>
+  </div>
+  <script src="update.js"></script>
+</body>
+</html>

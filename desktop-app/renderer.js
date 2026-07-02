@@ -915,14 +915,30 @@ window.openEditMacroModal = async (id) => {
   const favEditExtraFields = document.getElementById('favEditExtraFields');
   const favSoundSelect = document.getElementById('favSoundSelect');
   const favSelectedSoundName = document.getElementById('favSelectedSoundName');
-  const favClearSoundBtn = document.getElementById('favClearSoundBtn');
-  const favTextsContainer = document.getElementById('favTextsContainer');
-  const favoriteModal = document.getElementById('favoriteModal');
-  const duplicateFavBtn = document.getElementById('duplicateFavBtn');
+      const favClearSoundBtn = document.getElementById('favClearSoundBtn');
+    const favTextsContainer = document.getElementById('favTextsContainer');
+    const favoriteModal = document.getElementById('favoriteModal');
+    const duplicateFavBtn = document.getElementById('duplicateFavBtn');
+    
+    // New preview elements
+    const favPreviewControls = document.getElementById('favPreviewControls');
+    const favPreviewVolume = document.getElementById('favPreviewVolume');
+    const favStopPreviewBtn = document.getElementById('favStopPreviewBtn');
   
-  if (favModalTitle) favModalTitle.textContent = "✏️ Modifier le Favori";
-  if (favEditExtraFields) favEditExtraFields.style.display = 'block';
-  if (duplicateFavBtn) duplicateFavBtn.style.display = 'block';
+      if (favModalTitle) favModalTitle.textContent = "✏️ Modifier le Favori";
+    if (favEditExtraFields) favEditExtraFields.style.display = 'block';
+    if (duplicateFavBtn) duplicateFavBtn.style.display = 'block';
+    if (favPreviewControls) favPreviewControls.style.display = 'none';
+    if (favStopPreviewBtn) favStopPreviewBtn.style.display = 'none';
+    
+    // Ensure any playing preview stops when modal opens
+    if (typeof currentPreviewAudio !== 'undefined' && currentPreviewAudio) {
+       currentPreviewAudio.pause();
+       currentPreviewAudio.currentTime = 0;
+       currentPreviewAudio = null;
+       const stopPreviewBtn = document.getElementById('stopPreviewBtn');
+       if (stopPreviewBtn) stopPreviewBtn.style.display = 'none';
+    }
   
   favNameInput.value = m.name;
   favShortcutInput.value = m.shortcut || '';
@@ -997,61 +1013,126 @@ window.openEditMacroModal = async (id) => {
           favSoundResults.style.display = 'block';
         }
         
-        try {
-          const response = await fetch(`https://www.myinstants.com/api/v1/instants/?name=${encodeURIComponent(q)}`);
-          const data = await response.json();
-          if (favSoundResults) favSoundResults.innerHTML = '';
-          
-          if (data.results && data.results.length > 0) {
-            data.results.forEach(instant => {
-              const div = document.createElement('div');
-              div.style.display = 'flex';
-              div.style.justifyContent = 'space-between';
-              div.style.alignItems = 'center';
-              div.style.padding = '5px';
-              div.style.borderBottom = '1px solid #334155';
-              
-              const name = document.createElement('span');
-              name.textContent = instant.name;
-              name.style.fontSize = '0.9em';
-              name.style.flex = '1';
-              
-              const btn = document.createElement('button');
-              btn.textContent = 'Choisir';
-              btn.className = 'btn-small primary-btn';
-              btn.style.padding = '2px 8px';
-              
-              btn.onclick = async (ev) => {
-                ev.preventDefault();
-                ev.stopPropagation();
-                if (favSelectedSoundName) {
-                  favSelectedSoundName.textContent = "Téléchargement...";
-                  favSelectedSoundName.style.color = "#fbbf24";
-                }
-                if (favSoundResults) favSoundResults.style.display = 'none';
-                try {
-                  const soundRes = await fetch(instant.sound);
-                  const buffer = await soundRes.arrayBuffer();
-                  const tempPath = require('path').join(require('os').tmpdir(), `fav_sound_${Date.now()}.mp3`);
-                  require('fs').writeFileSync(tempPath, Buffer.from(buffer));
-                  if (favSoundSelect) favSoundSelect.value = tempPath;
-                  if (favSelectedSoundName) {
-                    favSelectedSoundName.textContent = instant.name;
-                    favSelectedSoundName.style.color = "#10b981";
+                  try {
+            const response = await fetch(`https://www.myinstants.com/api/v1/instants/?name=${encodeURIComponent(q)}`);
+            const data = await response.json();
+            if (favSoundResults) favSoundResults.innerHTML = '';
+            
+            if (favPreviewControls) favPreviewControls.style.display = 'flex';
+            
+            if (data.results && data.results.length > 0) {
+              data.results.forEach(instant => {
+                const div = document.createElement('div');
+                div.style.display = 'flex';
+                div.style.justifyContent = 'space-between';
+                div.style.alignItems = 'center';
+                div.style.padding = '5px';
+                div.style.borderBottom = '1px solid #334155';
+                
+                const name = document.createElement('span');
+                name.textContent = instant.name;
+                name.style.fontSize = '0.9em';
+                name.style.flex = '1';
+                
+                const buttonsDiv = document.createElement('div');
+                buttonsDiv.style.display = 'flex';
+                buttonsDiv.style.gap = '5px';
+                
+                const previewBtn = document.createElement('button');
+                previewBtn.textContent = "▶️";
+                previewBtn.className = "btn-small btn-secondary";
+                previewBtn.style.padding = "2px 5px";
+                previewBtn.title = "Écouter un aperçu";
+                previewBtn.onclick = (ev) => {
+                  ev.preventDefault();
+                  ev.stopPropagation();
+                  if (typeof currentPreviewAudio !== 'undefined' && currentPreviewAudio) {
+                    currentPreviewAudio.pause();
+                    currentPreviewAudio.currentTime = 0;
                   }
-                  if (favClearSoundBtn) favClearSoundBtn.style.display = 'inline-block';
-                } catch (err) {
-                  if (favSelectedSoundName) {
-                    favSelectedSoundName.textContent = "Erreur !";
-                    favSelectedSoundName.style.color = "#ef4444";
-                  }
+                  currentPreviewAudio = new Audio(instant.sound);
+                  currentPreviewAudio.volume = favPreviewVolume ? favPreviewVolume.value : 0.5;
+                  currentPreviewAudio.play();
+                  
+                  if (favStopPreviewBtn) favStopPreviewBtn.style.display = 'inline-block';
+                  
+                  currentPreviewAudio.onended = () => {
+                    if (favStopPreviewBtn && currentPreviewAudio) {
+                      favStopPreviewBtn.style.display = 'none';
+                    }
+                  };
+                };
+                
+                if (favStopPreviewBtn) {
+                  favStopPreviewBtn.onclick = (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    if (typeof currentPreviewAudio !== 'undefined' && currentPreviewAudio) {
+                      currentPreviewAudio.pause();
+                      currentPreviewAudio.currentTime = 0;
+                      currentPreviewAudio = null;
+                    }
+                    favStopPreviewBtn.style.display = 'none';
+                  };
                 }
-              };
-              
-              div.appendChild(name);
-              div.appendChild(btn);
-              if (favSoundResults) favSoundResults.appendChild(div);
-            });
+                
+                if (favPreviewVolume) {
+                  favPreviewVolume.oninput = () => {
+                    if (typeof currentPreviewAudio !== 'undefined' && currentPreviewAudio) {
+                      currentPreviewAudio.volume = favPreviewVolume.value;
+                    }
+                  };
+                }
+                
+                const btn = document.createElement('button');
+                btn.textContent = 'Choisir';
+                btn.className = 'btn-small primary-btn';
+                btn.style.padding = '2px 8px';
+                
+                btn.onclick = async (ev) => {
+                  ev.preventDefault();
+                  ev.stopPropagation();
+                  
+                  // Stop preview if playing
+                  if (typeof currentPreviewAudio !== 'undefined' && currentPreviewAudio) {
+                    currentPreviewAudio.pause();
+                    currentPreviewAudio.currentTime = 0;
+                    currentPreviewAudio = null;
+                    if (favStopPreviewBtn) favStopPreviewBtn.style.display = 'none';
+                  }
+                  
+                  if (favSelectedSoundName) {
+                    favSelectedSoundName.textContent = "Téléchargement...";
+                    favSelectedSoundName.style.color = "#fbbf24";
+                  }
+                  if (favSoundResults) favSoundResults.style.display = 'none';
+                  if (favPreviewControls) favPreviewControls.style.display = 'none';
+                  try {
+                    const soundRes = await fetch(instant.sound);
+                    const buffer = await soundRes.arrayBuffer();
+                    const tempPath = require('path').join(require('os').tmpdir(), `fav_sound_${Date.now()}.mp3`);
+                    require('fs').writeFileSync(tempPath, Buffer.from(buffer));
+                    if (favSoundSelect) favSoundSelect.value = tempPath;
+                    if (favSelectedSoundName) {
+                      favSelectedSoundName.textContent = instant.name;
+                      favSelectedSoundName.style.color = "#10b981";
+                    }
+                    if (favClearSoundBtn) favClearSoundBtn.style.display = 'inline-block';
+                  } catch (err) {
+                    if (favSelectedSoundName) {
+                      favSelectedSoundName.textContent = "Erreur !";
+                      favSelectedSoundName.style.color = "#ef4444";
+                    }
+                  }
+                };
+                
+                buttonsDiv.appendChild(previewBtn);
+                buttonsDiv.appendChild(btn);
+                
+                div.appendChild(name);
+                div.appendChild(buttonsDiv);
+                if (favSoundResults) favSoundResults.appendChild(div);
+              });
           } else {
             if (favSoundResults) favSoundResults.innerHTML = '<p class="text-muted" style="text-align:center;">Aucun résultat</p>';
           }

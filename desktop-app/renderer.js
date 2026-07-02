@@ -101,6 +101,67 @@ const volumeValue = document.getElementById('volumeValue');
 const positionSelect = document.getElementById('positionSelectSettings');
 const saveSettingsBtn = document.getElementById('saveSettingsBtn');
 
+  // Keybinders logic
+  const keybinders = document.querySelectorAll('.keybinder');
+  keybinders.forEach(input => {
+    input.addEventListener('keydown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const key = e.key;
+      // Ignore bare modifiers
+      if (['Control', 'Shift', 'Alt', 'Meta'].includes(key)) return;
+      
+      let keys = [];
+      if (e.ctrlKey || e.metaKey) keys.push('CommandOrControl');
+      if (e.shiftKey) keys.push('Shift');
+      if (e.altKey) keys.push('Alt');
+      
+      let keyName = key.toUpperCase();
+      if (keyName === ' ') keyName = 'Space';
+      if (keyName.length === 1) {
+          if (keyName.match(/[A-Z0-9]/)) {
+            keys.push(keyName);
+          } else {
+            // Ignore invalid symbols
+            return;
+          }
+        } else if (keyName.startsWith('ARROW')) {
+           keys.push(keyName.replace('ARROW', ''));
+        } else {
+           keys.push(keyName);
+        }
+      
+      const realShortcut = keys.join('+');
+        input.dataset.shortcut = realShortcut;
+        input.value = realShortcut.replace(/CommandOrControl/g, 'Ctrl').replace(/Shift/g, 'Maj');
+      
+      // Save instantly
+      
+      // Save instantly
+      const defsSave = {"shortcutForceClose":"CommandOrControl+Shift+X","shortcutQuickHub":"CommandOrControl+Shift+Q","shortcutQuickMenu":"CommandOrControl+Shift+D","shortcutQuickMedia":"CommandOrControl+Shift+M","shortcutQuickGif":"CommandOrControl+Shift+G","shortcutQuickTts":"CommandOrControl+Shift+V","shortcutQuickTroll":"CommandOrControl+Shift+T"};
+        const shortcutForceClose = document.getElementById('shortcutForceClose')?.dataset.shortcut || defsSave.shortcutForceClose;
+        const shortcutQuickHub = document.getElementById('shortcutQuickHub')?.dataset.shortcut || defsSave.shortcutQuickHub;
+        const shortcutQuickMenu = document.getElementById('shortcutQuickMenu')?.dataset.shortcut || defsSave.shortcutQuickMenu;
+        const shortcutQuickMedia = document.getElementById('shortcutQuickMedia')?.dataset.shortcut || defsSave.shortcutQuickMedia;
+        const shortcutQuickGif = document.getElementById('shortcutQuickGif')?.dataset.shortcut || defsSave.shortcutQuickGif;
+        const shortcutQuickTts = document.getElementById('shortcutQuickTts')?.dataset.shortcut || defsSave.shortcutQuickTts;
+        const shortcutQuickTroll = document.getElementById('shortcutQuickTroll')?.dataset.shortcut || defsSave.shortcutQuickTroll;
+
+        ipcRenderer.send('update-shortcuts', {
+          shortcutForceClose,
+          shortcutQuickHub,
+          shortcutQuickMenu,
+          shortcutQuickMedia,
+          shortcutQuickGif,
+          shortcutQuickTts,
+          shortcutQuickTroll
+        });
+
+    });
+  });
+
+
 // Window controls
 document.getElementById('minBtn').addEventListener('click', () => ipcRenderer.send('window-min'));
 document.getElementById('maxBtn').addEventListener('click', () => ipcRenderer.send('window-max'));
@@ -142,6 +203,18 @@ if (scaleValue) scaleValue.textContent = appSettings.scale;
 if (volumeSlider) volumeSlider.value = appSettings.volume;
 if (volumeValue) volumeValue.textContent = appSettings.volume;
 if (positionSelect) positionSelect.value = appSettings.position;
+
+  // Load Shortcuts
+  const defs = {"shortcutForceClose":"CommandOrControl+Shift+X","shortcutQuickHub":"CommandOrControl+Shift+Q","shortcutQuickMenu":"CommandOrControl+Shift+D","shortcutQuickMedia":"CommandOrControl+Shift+M","shortcutQuickGif":"CommandOrControl+Shift+G","shortcutQuickTts":"CommandOrControl+Shift+V","shortcutQuickTroll":"CommandOrControl+Shift+T"};
+  const inputsToLoad = ['shortcutForceClose', 'shortcutQuickHub', 'shortcutQuickMenu', 'shortcutQuickMedia', 'shortcutQuickGif', 'shortcutQuickTts', 'shortcutQuickTroll'];
+  inputsToLoad.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      const val = appSettings[id] || defs[id] || '';
+      el.dataset.shortcut = val;
+      el.value = val.replace(/CommandOrControl/g, 'Ctrl').replace(/Shift/g, 'Maj');
+    }
+  });
 
 const userPseudoInput = document.getElementById('userPseudo');
 let myPseudo = localStorage.getItem('memescreen_pseudo') || '';
@@ -942,7 +1015,8 @@ window.openEditMacroModal = async (id) => {
     }
   
   favNameInput.value = m.name;
-  favShortcutInput.value = m.shortcut || '';
+  favShortcutInput.dataset.shortcut = m.shortcut || '';
+    favShortcutInput.value = (m.shortcut || '').replace(/CommandOrControl/g, 'Ctrl').replace(/Shift/g, 'Maj');
   
   if (m.soundPath && m.soundPath !== 'none') {
     favSoundSelect.value = m.soundPath;
@@ -1165,7 +1239,8 @@ if (favoriteMemeBtn) {
     if (duplicateFavBtn) duplicateFavBtn.style.display = 'none';
     
     favNameInput.value = '';
-    favShortcutInput.value = '';
+    favShortcutInput.dataset.shortcut = '';
+      favShortcutInput.value = '';
     favoriteModal.style.display = 'flex';
   });
 }
@@ -1183,7 +1258,7 @@ if (saveFavBtn) {
     duplicateFavBtn.addEventListener('click', () => {
       const name = favNameInput.value.trim();
       if (!name) return;
-      const shortcut = favShortcutInput.value.trim();
+      const shortcut = favShortcutInput.dataset.shortcut || '';
       
       favoriteModal.style.display = 'none';
       
@@ -1255,7 +1330,7 @@ if (saveFavBtn) {
   saveFavBtn.addEventListener('click', () => {
     const name = favNameInput.value.trim();
     if (!name) return;
-    const shortcut = favShortcutInput.value.trim();
+    const shortcut = favShortcutInput.dataset.shortcut || '';
     
     favoriteModal.style.display = 'none';
         if (editingMacroId) {

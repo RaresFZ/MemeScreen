@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>MemeScreen - Actions Rapides</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      margin: 0;
+      padding: 20px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      border: 3px solid var(--primary);
+      box-sizing: border-box;
+      overflow: hidden;
+      user-select: none;
+    }
+    
+    /* Titre Draggable */
+    .drag-header {
+      -webkit-app-region: drag;
+      text-align: center;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .drag-header h2 {
+      color: var(--primary);
+      font-size: 1.5rem;
+      margin: 0;
+      text-shadow: var(--shadow-neon);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .close-btn {
+      -webkit-app-region: no-drag;
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background: none;
+      border: none;
+      color: var(--danger);
+      font-size: 1.5rem;
+      cursor: pointer;
+      font-weight: bold;
+      padding: 5px;
+      box-shadow: none;
+    }
+    .close-btn:hover {
+        background: none !important;
+        color: var(--danger) !important;
+      text-shadow: 0 0 10px var(--danger);
+      transform: scale(1.1);
+      box-shadow: none;
+    }
+
+    /* Drag & Drop Zone */
+    #dropZone {
+      flex: 1;
+      border: 2px dashed var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      color: var(--primary);
+      font-size: 1.2rem;
+      text-align: center;
+      transition: 0.2s;
+      background: rgba(255, 255, 0, 0.05);
+      flex-direction: column;
+      gap: 10px;
+    }
+    #dropZone.dragover {
+      background: rgba(255, 255, 0, 0.2);
+      border-color: #fff;
+      color: #fff;
+      transform: scale(1.02);
+    }
+
+    /* Grid d'actions */
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    .action-btn {
+      padding: 15px 10px;
+      font-size: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+    .action-btn span {
+      font-size: 1.8rem;
+    }
+
+    /* Panneaux secondaires */
+    .panel {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+    }
+    .panel.active {
+      display: flex;
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1rem;
+      text-align: left;
+      margin-bottom: 15px;
+      padding: 0;
+      box-shadow: none;
+      text-transform: uppercase;
+    }
+    .back-btn:hover {
+      color: var(--primary);
+      transform: translateX(-5px);
+      box-shadow: none;
+    }
+
+    /* Giphy Panel */
+    #gifResults {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      overflow-y: auto;
+      margin-top: 15px;
+      flex: 1;
+    }
+    .gif-item {
+      width: 100%;
+      height: 100px;
+      object-fit: cover;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .gif-item:hover {
+      border-color: var(--primary);
+      transform: scale(1.05);
+      box-shadow: var(--shadow-sm);
+    }
+  </style>
+</head>
+<body>
+  <div class="drag-header">
+    <h2 id="menuTitle">⚡ ACTIONS RAPIDES ⚡</h2>
+    <button class="close-btn" id="closeBtn">X</button>
+  </div>
+
+  <!-- MAIN MENU -->
+  
+  
+  <!-- HUB PANEL -->
+  <div id="hubPanel" class="panel">
+    <div class="action-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex: 1;">
+      <button class="action-btn" id="btnMediaHub">
+        <span>🖼️</span><br>Fichier Média
+      </button>
+      <button class="action-btn" id="btnGifHub">
+        <span>🎞️</span><br>Envoyer un GIF
+      </button>
+      <button class="action-btn" id="btnTtsHub">
+        <span>🗣️</span><br>Message Vocal
+      </button>
+      <button class="action-btn" style="border-color: var(--danger); color: var(--danger);" id="btnTrollHub">
+        <span>😈</span><br><span style="color:var(--danger)">Lancer Troll</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN PANEL (DRAG & DROP ONLY) -->
+  <div id="mainPanel" class="panel active">
+    <button class="back-btn">⬅ RETOUR</button>
+    <div id="dropZone" style="flex: 1; border: 2px dashed var(--primary); display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--primary); font-size: 1.2rem; cursor: pointer;">
+      <span style="font-size: 3rem; margin-bottom: 10px;">📥</span>
+      <strong style="text-shadow: var(--shadow-neon);">GLISSER UN MÉDIA ICI</strong>
+      <small style="color: var(--text-muted); margin-top: 10px;">(ou clique pour parcourir)</small>
+    </div>
+  </div>
+
+  <!-- GIF PANEL -->
+  <div id="gifPanel" class="panel">
+    <button class="back-btn">⬅ RETOUR</button>
+    <div class="input-group" style="margin:0; width:100%;">
+      <input type="text" id="gifSearchInput" placeholder="Rechercher un GIF...">
+    </div>
+    <div id="gifResults"></div>
+  </div>
+
+  <!-- TTS PANEL -->
+  <div id="ttsPanel" class="panel">
+    <button class="back-btn">⬅ RETOUR</button>
+    <div class="input-group" style="margin:0; width:100%; flex:1; justify-content:center;">
+      <label>TEXTE À LIRE (TTS)</label>
+      <input type="text" id="ttsInput" placeholder="Tape ton message..." style="margin-bottom: 20px;">
+      <button id="sendTtsBtn" class="primary-btn" style="width:100%;">ENVOYER 🗣️</button>
+    </div>
+  </div>
+
+  <!-- TROLL PANEL -->
+  <div id="trollPanel" class="panel">
+    <button class="back-btn">⬅ RETOUR</button>
+    <div class="input-group" style="margin:0; width:100%; flex:1; justify-content:center;">
+      <label style="color: var(--danger);">CIBLE DU TROLL</label>
+      <input type="text" id="trollTargetInput" placeholder="Pseudo de la victime..." style="border-color: var(--danger); margin-bottom: 20px;">
+      <button id="sendTrollBtn" class="primary-btn" style="width:100%; background: var(--danger); border-color: var(--danger);">LANCER LE VOTE 😈</button>
+    </div>
+  </div>
+
+  <script src="quick-menu.js"></script>
+</body>
+</html>

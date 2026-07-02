@@ -6,22 +6,28 @@ const os = require('os');
 const memeCanvas = document.getElementById('memeCanvas');
 const memeVideo = document.getElementById('memeVideo');
 const ctx = memeCanvas.getContext('2d');
-const memeTextInput = document.getElementById('memeText');
+
 const sizeSlider = document.getElementById('sizeSlider');
 const sendBtn = document.getElementById('sendBtn');
 const cancelBtn = document.getElementById('cancelBtn');
+const headerCloseBtn = document.getElementById('headerCloseBtn');
+if(headerCloseBtn) headerCloseBtn.addEventListener('click', () => window.close());
+
+const headerBackBtn = document.getElementById('headerBackBtn');
+if(headerBackBtn) {
+  headerBackBtn.addEventListener('click', () => {
+    ipcRenderer.send('return-to-quick-menu');
+    window.close();
+  });
+}
+
 const uploadStatus = document.getElementById('uploadStatus');
 
 let currentMediaType = null;
 let currentMediaPath = null;
 let currentImage = null;
 
-let memeText = {
-  text: "",
-  x: 0,
-  y: 0,
-  size: 80
-};
+
 
 let isDragging = false;
 let dragOffsetX = 0;
@@ -39,13 +45,20 @@ ipcRenderer.on('load-media', (event, { filePath, type }) => {
     currentImage.onload = () => {
       memeCanvas.width = currentImage.width;
       memeCanvas.height = currentImage.height;
-      memeText.x = memeCanvas.width / 2;
-      memeText.y = memeCanvas.height - (memeCanvas.height / 4);
-      memeText.size = Math.floor(memeCanvas.height / 8) || 80;
-      sizeSlider.value = memeText.size;
+      memeTexts[0].x = memeCanvas.width / 2;
+      memeTexts[0].y = memeCanvas.height - (memeCanvas.height / 4);
+      memeTexts[0].size = Math.floor(memeCanvas.height / 8) || 80;
+      sizeSlider.value = memeTexts[0].size;
       drawMeme();
     };
-    currentImage.src = 'file:///' + filePath.replace(/\\/g, '/');
+    
+    if (filePath.startsWith('http')) {
+      currentImage.crossOrigin = "Anonymous";
+      currentImage.src = filePath;
+    } else {
+      currentImage.src = 'file:///' + filePath.replace(/\\/g, '/');
+    }
+
   } else if (type === 'video') {
     currentImage = null;
     memeVideo.style.display = 'block';
@@ -54,15 +67,55 @@ ipcRenderer.on('load-media', (event, { filePath, type }) => {
     memeVideo.onloadedmetadata = () => {
       memeCanvas.width = memeVideo.videoWidth;
       memeCanvas.height = memeVideo.videoHeight;
-      memeText.x = memeCanvas.width / 2;
-      memeText.y = memeCanvas.height - (memeCanvas.height / 4);
-      memeText.size = Math.floor(memeCanvas.height / 8) || 80;
-      sizeSlider.value = memeText.size;
+      memeTexts[0].x = memeCanvas.width / 2;
+      memeTexts[0].y = memeCanvas.height - (memeCanvas.height / 4);
+      memeTexts[0].size = Math.floor(memeCanvas.height / 8) || 80;
+      sizeSlider.value = memeTexts[0].size;
       drawMeme();
     };
   }
 });
 
+/* DRAW MEME REPLACED */
+
+
+let memeTexts = [
+  { text: "", x: 0, y: 0, size: 80 }
+];
+let draggingTextIndex = -1;
+
+const textsContainer = document.getElementById('textsContainer');
+const addTextBtn = document.getElementById('addTextBtn');
+
+if (addTextBtn) {
+  addTextBtn.addEventListener('click', () => {
+    if (memeTexts.length >= 3) return;
+    const newY = memeCanvas.height ? memeCanvas.height / (memeTexts.length + 2) : 0;
+    memeTexts.push({ text: "", x: memeCanvas.width ? memeCanvas.width / 2 : 0, y: newY, size: memeTexts[0].size });
+    
+    const div = document.createElement('div');
+    div.className = 'row text-row';
+    div.innerHTML = `<input type="text" class="memeText" placeholder="Ligne supplémentaire...">`;
+    textsContainer.appendChild(div);
+    
+    bindTextInputs();
+  });
+}
+
+function bindTextInputs() {
+  const inputs = document.querySelectorAll('.memeText');
+  inputs.forEach((input, index) => {
+    input.oninput = (e) => {
+      if (memeTexts[index]) {
+        memeTexts[index].text = e.target.value.toUpperCase();
+        drawMeme();
+      }
+    };
+  });
+}
+bindTextInputs();
+
+// OVERWRITE old draw logic
 function drawMeme() {
   if (currentMediaType === 'image' && currentImage) {
     ctx.drawImage(currentImage, 0, 0);
@@ -70,24 +123,25 @@ function drawMeme() {
     ctx.clearRect(0, 0, memeCanvas.width, memeCanvas.height);
   }
   
-  if (!memeText.text) return;
-
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   
-  ctx.font = `900 ${memeText.size}px Impact, Arial Black, sans-serif`;
-  ctx.lineWidth = Math.max(2, Math.floor(memeText.size / 15));
-  ctx.fillStyle = 'white';
-  ctx.strokeStyle = 'black';
-  
-  const lines = memeText.text.split('\n');
-  
-  for (let j = 0; j < lines.length; j++) {
-    const lineY = memeText.y + (j * memeText.size * 1.1);
-    ctx.fillText(lines[j], memeText.x, lineY);
-    ctx.strokeText(lines[j], memeText.x, lineY);
-  }
+  memeTexts.forEach(txt => {
+    if (!txt.text) return;
+    ctx.font = `900 ${txt.size}px Impact, Arial Black, sans-serif`;
+    ctx.lineWidth = Math.max(2, Math.floor(txt.size / 15));
+    ctx.fillStyle = 'white';
+    ctx.strokeStyle = 'black';
+    
+    const lines = txt.text.split('\n');
+    for (let j = 0; j < lines.length; j++) {
+      const lineY = txt.y + (j * txt.size * 1.1);
+      ctx.fillText(lines[j], txt.x, lineY);
+      ctx.strokeText(lines[j], txt.x, lineY);
+    }
+  });
 }
+
 
 function getMousePos(evt) {
   const rect = memeCanvas.getBoundingClientRect();
@@ -99,34 +153,39 @@ function getMousePos(evt) {
   };
 }
 
+
 memeCanvas.addEventListener('mousedown', (e) => {
-  if (!memeText.text) return;
   const pos = getMousePos(e);
-  
-  // Hitbox simplifiée
-  isDragging = true;
-  dragOffsetX = pos.x - memeText.x;
-  dragOffsetY = pos.y - memeText.y;
+  for (let i = memeTexts.length - 1; i >= 0; i--) {
+    const t = memeTexts[i];
+    if (!t.text) continue;
+    // Simple hitbox approximation
+    if (Math.abs(pos.x - t.x) < 200 && Math.abs(pos.y - t.y) < 100) {
+      isDragging = true;
+      draggingTextIndex = i;
+      dragOffsetX = pos.x - t.x;
+      dragOffsetY = pos.y - t.y;
+      break;
+    }
+  }
 });
 
 memeCanvas.addEventListener('mousemove', (e) => {
-  if (isDragging) {
+  if (isDragging && draggingTextIndex > -1) {
     const pos = getMousePos(e);
-    memeText.x = pos.x - dragOffsetX;
-    memeText.y = pos.y - dragOffsetY;
+    memeTexts[draggingTextIndex].x = pos.x - dragOffsetX;
+    memeTexts[draggingTextIndex].y = pos.y - dragOffsetY;
     drawMeme();
   }
 });
 
+
 window.addEventListener('mouseup', () => { isDragging = false; });
 
-memeTextInput.addEventListener('input', (e) => {
-  memeText.text = e.target.value.toUpperCase();
-  drawMeme();
-});
+
 
 sizeSlider.addEventListener('input', (e) => {
-  memeText.size = parseInt(e.target.value, 10);
+  memeTexts.forEach(t => t.size = parseInt(e.target.value, 10));
   drawMeme();
 });
 
@@ -138,10 +197,9 @@ sendBtn.addEventListener('click', () => {
   sendBtn.disabled = true;
   sendBtn.textContent = "Traitement... ⏳";
   
-  let textsArr = [];
-  if (memeText.text.trim().length > 0) {
-    textsArr.push(memeText);
-  }
+  
+  let textsArr = memeTexts.filter(t => t.text.trim().length > 0);
+
   
   if (currentMediaType === 'image') {
     setTimeout(() => {

@@ -5,10 +5,10 @@
   <title>MemeScreen - Envoi Rapide</title>
   <link rel="stylesheet" href="style.css">
   <style>
+    
     body {
-      background-color: #0f172a; /* dark blue slate */
-      color: white;
-      font-family: 'Inter', -apple-system, sans-serif;
+      background-color: #000;
+      color: var(--primary);
       margin: 0;
       padding: 20px;
       display: flex;
@@ -16,6 +16,10 @@
       height: 100vh;
       box-sizing: border-box;
       overflow: hidden;
+      border: 3px solid var(--primary);
+      text-shadow: var(--shadow-neon);
+      text-transform: uppercase;
+      font-family: 'Courier New', Courier, monospace;
     }
     
     .editor-container {
@@ -24,8 +28,9 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: #1e293b;
-      border-radius: 12px;
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 0;
       overflow: hidden;
       margin-bottom: 20px;
       position: relative;
@@ -52,11 +57,12 @@
     .row input[type="text"] {
       flex: 1;
       padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #334155;
-      background: #0f172a;
-      color: white;
+      border-radius: 0;
+      border: 2px solid var(--primary);
+      background: #000;
+      color: var(--primary);
       font-size: 16px;
+      font-family: inherit;
     }
     
     .buttons {
@@ -67,56 +73,107 @@
     
     button {
       padding: 10px 20px;
-      border-radius: 8px;
-      font-weight: 600;
+      border-radius: 0;
+      font-weight: bold;
       cursor: pointer;
-      border: none;
-      transition: all 0.2s;
+      background: #000;
+      color: var(--text-muted);
+      border: 2px solid var(--text-muted);
+      transition: 0.2s;
+      font-family: inherit;
+      text-transform: uppercase;
     }
     
     .btn-send {
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      color: white;
-      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+      color: var(--primary);
+      border-color: var(--primary);
     }
     
     .btn-send:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
-    }
-    
-    .btn-cancel {
-      background: #334155;
-      color: white;
+      box-shadow: var(--shadow-neon);
+      transform: scale(1.05);
     }
     
     .btn-cancel:hover {
-      background: #475569;
+      color: var(--danger);
+      border-color: var(--danger);
+      box-shadow: 0 0 10px var(--danger);
     }
     
     #uploadStatus {
       text-align: center;
       font-size: 14px;
       margin-top: 5px;
-      height: 20px;
+      color: var(--primary);
+    }
+
+  
+    .close-btn {
+      -webkit-app-region: no-drag;
+      background: none !important;
+      border: none !important;
+      color: var(--danger) !important;
+      font-size: 1.5rem;
+      cursor: pointer;
+      font-weight: bold;
+      padding: 0;
+      box-shadow: none !important;
+    }
+    .close-btn:hover {
+      text-shadow: 0 0 10px var(--danger);
+      transform: scale(1.1);
+      background: none !important;
+    }
+    .back-btn {
+      background: none !important;
+      border: none !important;
+      color: var(--text-muted) !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+    }
+    .back-btn:hover {
+      color: var(--primary) !important;
+      transform: translateX(-5px);
+      background: none !important;
+    }
+  
+    .memeText {
+      color: #ffffff !important;
+      font-weight: bold;
+      background: rgba(255, 255, 255, 0.05) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    }
+    .memeText::placeholder {
+      color: rgba(255, 255, 255, 0.5) !important;
     }
   </style>
 </head>
 <body>
   
+  
+  <div class="drag-header" style="display:flex; justify-content:space-between; align-items:center; -webkit-app-region: drag; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+    
+    <h2 style="margin:0; font-size: 1.2rem;">⚡ ÉDITEUR RAPIDE</h2>
+    <button class="close-btn" id="headerCloseBtn" style="-webkit-app-region: no-drag; background:none; border:none; color:var(--danger); font-size:1.5rem; cursor:pointer; font-weight:bold;">X</button>
+  </div>
+  <div style="padding-left: 20px;"><button class="back-btn" id="headerBackBtn" style="-webkit-app-region: no-drag; display:block; margin-bottom:0px; font-size:1rem; cursor:pointer; font-weight:bold; text-align:left;">⬅ RETOUR</button></div>
   <div class="editor-container">
+
     <video id="memeVideo" style="display:none;" loop muted></video>
     <canvas id="memeCanvas" style="display:none;"></canvas>
   </div>
   
   <div class="controls">
-    <div class="row">
-      <input type="text" id="memeText" placeholder="Texte du meme (vide pour ne rien écrire)" />
-      <div style="display:flex; flex-direction:column; align-items:center;">
-        <span style="font-size: 12px; color: #94a3b8; margin-bottom: 5px;">Taille</span>
-        <input type="range" id="sizeSlider" min="20" max="200" value="80" style="width: 100px;">
+      <div id="textsContainer" style="display:flex; flex-direction:column; gap:10px; overflow-y:auto; max-height: 120px; padding-right:5px;">
+        <div class="row text-row">
+          <input type="text" class="memeText" placeholder="Texte du meme (vide pour ne rien écrire)">
+        </div>
       </div>
-    </div>
+      <button id="addTextBtn" style="width:100%; border-color:#ffffff; color:#ffffff; font-weight:bold; background:rgba(255,255,255,0.1); font-size:0.8rem; padding:5px;">+ AJOUTER UN TEXTE</button>
+      <div class="row" style="margin-top:10px; display:flex; align-items:center;">
+        <label style="color:#ffffff; font-size:0.9rem; margin-right: 10px; font-weight:bold; font-family:inherit; text-transform:uppercase;">Taille Globale :</label>
+        <input type="range" id="sizeSlider" min="20" max="150" value="80" style="flex:1;">
+      </div>
     
     <div class="buttons">
       <button class="btn-cancel" id="cancelBtn">Annuler</button>

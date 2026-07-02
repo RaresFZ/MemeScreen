@@ -232,8 +232,41 @@
               <label>Volume Vidéo & Audio (<span id="volumeValue">50</span>%)</label>
               <input type="range" id="volumeSliderSettings" min="0" max="100" value="50" />
             </div>
-          </div>
-          <button id="saveSettingsBtn" class="primary-btn mt-4">Sauvegarder</button>
+            
+            
+              <!-- SHORTCUTS CATEGORY -->
+              <div style="grid-column: 1 / -1;"><h3 style="margin: 20px 0 10px 0;">Claviers & Raccourcis ⌨️</h3></div>
+              <div class="input-group">
+                <label style="color:var(--danger)">Fermer l'Overlay (Urgence)</label>
+                <input type="text" id="shortcutForceClose" class="keybinder" placeholder="Tape tes touches..." readonly style="cursor: pointer; text-align: center; color: var(--danger); border-color: var(--danger);">
+              </div>
+              <div class="input-group">
+                <label>Menu Actions Rapides (Général)</label>
+                <input type="text" id="shortcutQuickHub" class="keybinder" placeholder="Tape tes touches..." readonly style="cursor: pointer; text-align: center; color: var(--primary);">
+              </div>
+              <div class="input-group">
+                <label>Menu Actions Rapides (Drag & Drop)</label>
+                <input type="text" id="shortcutQuickMenu" class="keybinder" placeholder="Tape tes touches..." readonly style="cursor: pointer; text-align: center; color: var(--primary);">
+              </div>
+              <div class="input-group">
+                <label>Envoyer un Média (Direct)</label>
+                <input type="text" id="shortcutQuickMedia" class="keybinder" placeholder="Tape tes touches..." readonly style="cursor: pointer; text-align: center; color: var(--primary);">
+              </div>
+              <div class="input-group">
+                <label>Envoyer un GIF</label>
+                <input type="text" id="shortcutQuickGif" class="keybinder" placeholder="Tape tes touches..." readonly style="cursor: pointer; text-align: center; color: var(--primary);">
+              </div>
+              <div class="input-group">
+                <label>Message Vocal (TTS)</label>
+                <input type="text" id="shortcutQuickTts" class="keybinder" placeholder="Tape tes touches..." readonly style="cursor: pointer; text-align: center; color: var(--primary);">
+              </div>
+              <div class="input-group">
+                <label>Lancer un Troll</label>
+                <input type="text" id="shortcutQuickTroll" class="keybinder" placeholder="Tape tes touches..." readonly style="cursor: pointer; text-align: center; color: var(--primary);">
+              </div>
+            </div>
+            <button id="saveSettingsBtn" class="primary-btn mt-4">Sauvegarder</button>
+  
         </div>
       </section>
 
@@ -325,7 +358,7 @@
           </div>
           <div class="input-group">
             <label>Raccourci Clavier Global (Optionnel) :</label>
-            <input type="text" id="favShortcutInput" placeholder="Ex: CommandOrControl+Alt+1">
+            <input type="text" id="favShortcutInput" class="keybinder" readonly placeholder="Clique et tape tes touches... (Optionnel)" style="cursor: pointer; text-align: center; color: var(--primary);">
             <p class="text-muted" style="font-size: 0.8em; margin-top: 5px;">Tu pourras déclencher ce mème même si l'application est réduite en arrière-plan.</p>
           </div>
           

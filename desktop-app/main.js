@@ -20,6 +20,9 @@ let discordClient;
 let tray = null;
 let isQuitting = false;
 let quickEditWindow = null;
+let quickMenuWindow = null;
+let currentMacros = [];
+let currentSettings = {};
 
 function createWindow() {
   splashWindow = new BrowserWindow({
@@ -84,6 +87,71 @@ function createWindow() {
   });
 }
 
+
+function createQuickMenuWindow(panel = "main") {
+  let targetPanel = panel;
+  if (quickMenuWindow && !quickMenuWindow.isDestroyed()) {
+    quickMenuWindow.focus();
+    quickMenuWindow.webContents.send('open-panel', targetPanel);
+    return;
+  }
+
+  quickMenuWindow = new BrowserWindow({
+    width: 600,
+    height: 400,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
+
+  quickMenuWindow.loadFile('quick-menu.html');
+  quickMenuWindow.webContents.once('did-finish-load', () => {
+    quickMenuWindow.webContents.send('open-panel', targetPanel);
+  });
+
+  quickMenuWindow.on('closed', () => {
+    quickMenuWindow = null;
+  });
+}
+
+// IPC for Quick Menu
+
+  ipcMain.on('return-to-quick-menu', () => {
+    createQuickMenuWindow('hub');
+  });
+
+  ipcMain.on('close-quick-menu', () => {
+  if (quickMenuWindow) quickMenuWindow.close();
+});
+
+ipcMain.on('open-quick-edit', (event, { filePath, type }) => {
+  if (quickMenuWindow) quickMenuWindow.close();
+  createQuickEditWindow(filePath, type);
+});
+
+ipcMain.on('trigger-media-dialog', () => {
+  if (quickMenuWindow) quickMenuWindow.close();
+  dialog.showOpenDialog({
+    title: 'Sélectionner une image ou vidéo',
+    properties: ['openFile'],
+    filters: [
+      { name: 'Médias', extensions: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'webm', 'mov'] }
+    ]
+  }).then(result => {
+    if (!result.canceled && result.filePaths.length > 0) {
+      const filePath = result.filePaths[0];
+      const ext = path.extname(filePath).toLowerCase();
+      const type = ['.mp4', '.webm', '.mov'].includes(ext) ? 'video' : 'image';
+      createQuickEditWindow(filePath, type);
+    }
+  });
+});
+
 function createQuickEditWindow(filePath, type) {
   if (quickEditWindow && !quickEditWindow.isDestroyed()) {
     quickEditWindow.focus();
@@ -91,16 +159,15 @@ function createQuickEditWindow(filePath, type) {
   }
 
   quickEditWindow = new BrowserWindow({
-    width: 600,
-    height: 700,
-    backgroundColor: '#0f172a',
-    title: 'Envoi Rapide',
-    autoHideMenuBar: true,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
-    }
-  });
+      width: 800,
+      height: 700,
+      frame: false,
+      transparent: true,
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false
+      }
+    });
 
   quickEditWindow.loadFile('quick-edit.html');
 
@@ -177,31 +244,21 @@ if (!gotTheLock) {
     tray.setToolTip('MemeScreen');
     
     const contextMenu = Menu.buildFromTemplate([
-      { label: 'Ouvrir MemeScreen', click: () => { if (mainWindow) mainWindow.show(); } },
-      { label: 'Envoyer un Média (Rapide)', click: () => {
-          dialog.showOpenDialog({
-            title: 'Sélectionner une image ou vidéo',
-            properties: ['openFile'],
-            filters: [
-              { name: 'Médias', extensions: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'webm', 'mov'] }
-            ]
-          }).then(result => {
-            if (!result.canceled && result.filePaths.length > 0) {
-              const filePath = result.filePaths[0];
-              const ext = path.extname(filePath).toLowerCase();
-              const type = ['.mp4', '.webm', '.mov'].includes(ext) ? 'video' : 'image';
-              createQuickEditWindow(filePath, type);
-            }
-          });
+        { label: 'Ouvrir MemeScreen', click: () => { if (mainWindow) mainWindow.show(); } },
+        { type: 'separator' },
+        { label: '⚡ Actions Rapides', click: () => { createQuickMenuWindow('hub'); } },
+        { label: '📥 Drag & Drop', click: () => { createQuickMenuWindow('main'); } },
+        { label: '🖼️ Envoyer un Média', click: () => { createQuickMenuWindow('media'); } },
+        { label: '🎞️ Envoyer un GIF', click: () => { createQuickMenuWindow('gif'); } },
+        { label: '🗣️ Message Vocal (TTS)', click: () => { createQuickMenuWindow('tts'); } },
+        { label: '😈 Lancer Troll', click: () => { createQuickMenuWindow('troll'); } },
+        { type: 'separator' },
+        { label: 'Quitter', click: () => {
+            isQuitting = true;
+            app.quit();
+          } 
         }
-      },
-      { type: 'separator' },
-      { label: 'Quitter', click: () => {
-          isQuitting = true;
-          app.quit();
-        } 
-      }
-    ]);
+      ]);
     
     tray.setContextMenu(contextMenu);
     tray.on('double-click', () => { if (mainWindow) mainWindow.show(); });
@@ -219,12 +276,53 @@ if (!gotTheLock) {
     // Check for updates automatically in the background
     autoUpdater.checkForUpdatesAndNotify();
     
-    // Enregistrement du raccourci global pour couper l'overlay
-    globalShortcut.register('CommandOrControl+Shift+X', () => {
-      if (overlayWindow) {
-        overlayWindow.webContents.send('force-close-media');
+    
+function registerGlobalShortcuts(settings) {
+  currentSettings = settings;
+  globalShortcut.unregisterAll();
+  
+  const bind = (shortcut, action) => {
+    if (shortcut && shortcut !== '') {
+      try { globalShortcut.register(shortcut, action); } catch(e) {}
+    }
+  };
+
+  bind(settings.shortcutForceClose || 'CommandOrControl+Shift+X', () => {
+    if (overlayWindow) overlayWindow.webContents.send('force-close-media');
+  });
+  
+  bind(settings.shortcutQuickHub || 'CommandOrControl+Shift+Q', () => createQuickMenuWindow('hub'));
+  bind(settings.shortcutQuickMenu || 'CommandOrControl+Shift+D', () => createQuickMenuWindow('main'));
+  bind(settings.shortcutQuickMedia || 'CommandOrControl+Shift+M', () => createQuickMenuWindow('media'));
+  bind(settings.shortcutQuickGif || 'CommandOrControl+Shift+G', () => createQuickMenuWindow('gif'));
+  bind(settings.shortcutQuickTts || 'CommandOrControl+Shift+V', () => createQuickMenuWindow('tts'));
+  bind(settings.shortcutQuickTroll || 'CommandOrControl+Shift+T', () => createQuickMenuWindow('troll'));
+
+  if (Array.isArray(currentMacros)) {
+    currentMacros.forEach(m => {
+      if (m.shortcut && m.shortcut !== '') {
+        try {
+          globalShortcut.register(m.shortcut, () => {
+            if (mainWindow) mainWindow.webContents.send('trigger-macro-shortcut', m.id);
+          });
+        } catch(e) {}
       }
     });
+  }
+}
+
+global.registerGlobalShortcutsRef = registerGlobalShortcuts;
+
+ipcMain.on('update-shortcuts', (event, settings) => {
+  registerGlobalShortcuts(settings);
+});
+
+ipcMain.on('update-macros', (event, macros) => {
+  currentMacros = macros;
+  registerGlobalShortcuts(currentSettings);
+});
+
+      registerGlobalShortcuts({});
   });
 }
 
@@ -490,30 +588,7 @@ ipcMain.on('window-close', () => {
   }
 });
 
-let currentMacros = [];
-ipcMain.on('update-macros', (event, macros) => {
-  currentMacros.forEach(m => {
-    if (m.shortcut) {
-      try { globalShortcut.unregister(m.shortcut); } catch(e){}
-    }
-  });
-  
-  currentMacros = macros;
-  
-  currentMacros.forEach(m => {
-    if (m.shortcut) {
-      try {
-        globalShortcut.register(m.shortcut, () => {
-          if (mainWindow) {
-            mainWindow.webContents.send('trigger-macro-shortcut', m.id);
-          }
-        });
-      } catch(e) {
-        console.error(`Failed to register shortcut ${m.shortcut} for macro ${m.name}`);
-      }
-    }
-  });
-});
+
 
 ipcMain.on('process-video', async (event, { inputPath, texts, width, height, sound }) => {
   if (!discordClient || !discordClient.targetChannelId) {

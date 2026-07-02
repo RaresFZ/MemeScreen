@@ -200,7 +200,8 @@ if (savedToken && savedChannel) {
 
 const autoStartCheckbox = document.getElementById('autoStartCheckbox');
 if (autoStartCheckbox) {
-  autoStartCheckbox.checked = localStorage.getItem('memescreen_autostart') === 'true';
+  const storedVal = localStorage.getItem('memescreen_autostart');
+  autoStartCheckbox.checked = storedVal === null ? true : storedVal === 'true';
   autoStartCheckbox.addEventListener('change', (e) => {
     localStorage.setItem('memescreen_autostart', e.target.checked);
     ipcRenderer.send('set-autostart', e.target.checked);

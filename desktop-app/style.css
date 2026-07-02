@@ -727,3 +727,51 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 button, input, select, textarea, strong { font-family: inherit; }
+
+
+/* --- CUSTOM CHECKBOX --- */
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 35px;
+  height: 35px;
+  background-color: #000;
+  border: 3px solid var(--primary);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.1s, box-shadow 0.1s, background-color 0.1s;
+  flex-shrink: 0;
+  margin: 0;
+}
+
+input[type="checkbox"]:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow);
+}
+
+input[type="checkbox"]:checked {
+  background-color: var(--primary);
+  border-color: var(--danger);
+  box-shadow: 4px 4px 0px var(--danger);
+}
+
+input[type="checkbox"]:checked::after {
+  content: 'X';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #000;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+/* GLOBAL SCROLLBAR HIDE */
+::-webkit-scrollbar {
+  display: none;
+}
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}

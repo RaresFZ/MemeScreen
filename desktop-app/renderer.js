@@ -1433,8 +1433,8 @@ ipcRenderer.on('troll-vote-started', (event, { target, duration, options }) => {
   trollVoteOverlay.style.display = 'flex';
   
   trollVoteBtns.forEach(btn => {
-    btn.style.borderColor = '#334155';
-    btn.style.boxShadow = 'none';
+    btn.style.borderColor = 'var(--primary)';
+      btn.style.boxShadow = 'var(--shadow-sm)';
     btn.querySelector('.vote-count').textContent = '0';
     
     // Update button text with random troll option if provided
@@ -1470,11 +1470,11 @@ trollVoteBtns.forEach(btn => {
     ipcRenderer.send('send-troll-vote', { vote, myPseudo });
     
     trollVoteBtns.forEach(b => {
-      b.style.borderColor = '#334155';
-      b.style.boxShadow = 'none';
+      b.style.borderColor = 'var(--primary)';
+        b.style.boxShadow = 'var(--shadow-sm)';
     });
-    btn.style.borderColor = '#eab308';
-    btn.style.boxShadow = '0 0 15px rgba(234, 179, 8, 0.5)';
+    btn.style.borderColor = 'var(--danger)';
+      btn.style.boxShadow = 'var(--shadow), 0 0 15px var(--danger)';
   });
 });
 

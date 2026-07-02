@@ -725,3 +725,5 @@ input[type="range"]::-webkit-slider-thumb {
   flex: 1;
   min-width: 140px;
 }
+
+button, input, select, textarea, strong { font-family: inherit; }

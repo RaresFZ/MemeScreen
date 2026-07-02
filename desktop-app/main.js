@@ -252,7 +252,7 @@ autoUpdater.on('update-downloaded', (info) => {
 });
 
 ipcMain.on('update-restart', () => {
-  autoUpdater.quitAndInstall();
+  autoUpdater.quitAndInstall(true, true);
 });
 
 ipcMain.on('update-later', () => {
